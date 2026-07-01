@@ -92,12 +92,20 @@ export default async function AdminPage() {
                   : "No hay una gestion abierta"}
               </p>
             </div>
-            <Link
-              className="h-10 rounded-md bg-slate-950 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800"
-              href="/admin/unidades"
-            >
-              Administrar unidades
-            </Link>
+            <div className="flex flex-wrap gap-3">
+              <Link
+                className="h-10 rounded-md bg-slate-950 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800"
+                href="/admin/unidades"
+              >
+                Administrar unidades
+              </Link>
+              <Link
+                className="h-10 rounded-md border border-slate-300 px-4 py-2 text-sm font-medium hover:bg-slate-50"
+                href="/admin/items-obligatorios"
+              >
+                Items obligatorios
+              </Link>
+            </div>
           </div>
 
           <div className="mt-5 grid gap-3">

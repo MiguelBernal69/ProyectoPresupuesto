@@ -52,9 +52,26 @@ model Gestion {
 
   topes               TopeUnidad[]
   detallesPresupuesto DetallePresupuesto[]
+  itemsObligatorios   ItemObligatorio[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model ItemObligatorio {
+  id Int @id @default(autoincrement())
+
+  gestionId Int
+  gestion   Gestion @relation(fields: [gestionId], references: [id], onDelete: Cascade)
+
+  itemCodigo String
+  item       Item   @relation(fields: [itemCodigo], references: [codigo], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([gestionId, itemCodigo])
+  @@index([gestionId])
 }
 
 model TopeUnidad {
@@ -92,6 +109,7 @@ model Item {
   objeto       Objeto @relation(fields: [objetoCodigo], references: [codigo], onDelete: Cascade)
 
   detallesPresupuesto DetallePresupuesto[]
+  itemsObligatorios   ItemObligatorio[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
