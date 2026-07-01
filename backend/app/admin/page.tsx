@@ -163,7 +163,7 @@ export default async function AdminPage() {
 
 function Header({ title, name }: { title: string; name: string }) {
   return (
-    <header className="border-b border-slate-200 bg-white">
+    <header className="sticky top-0 z-50 border-b border-slate-200 bg-white">
       <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-4 px-6 py-5">
         <div>
           <p className="text-sm font-medium text-slate-500">{name}</p>

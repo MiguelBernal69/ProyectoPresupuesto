@@ -5,6 +5,7 @@ import { logoutAction } from "@/app/login/actions";
 import { buscarItemsCatalogo } from "@/lib/services/catalogo";
 import { obtenerResumenUnidad } from "@/lib/services/presupuesto";
 import { agregarDetalleAction } from "./actions";
+import TablaConAcciones from "./TablaConAcciones";
 
 export const dynamic = "force-dynamic";
 
@@ -13,6 +14,8 @@ type UnidadPageProps = {
     q?: string;
     item?: string;
     created?: string;
+    updated?: string;
+    deleted?: string;
     error?: string;
   }>;
 };
@@ -28,9 +31,7 @@ export default async function UnidadPage({ searchParams }: UnidadPageProps) {
   }
 
   const [unidad, gestionActiva] = await Promise.all([
-    prisma.unidad.findUnique({
-      where: { id: user.unidadId },
-    }),
+    prisma.unidad.findUnique({ where: { id: user.unidadId } }),
     prisma.gestion.findFirst({
       where: { estado: "ABIERTA" },
       orderBy: { anio: "desc" },
@@ -41,19 +42,10 @@ export default async function UnidadPage({ searchParams }: UnidadPageProps) {
     notFound();
   }
 
-  const [detalles, resumen, resultados, selectedItem] = await Promise.all([
+  const [detalles, resumen, resultados, selectedItem, itemsObligatorios] = await Promise.all([
     prisma.detallePresupuesto.findMany({
-      where: {
-        unidadId: user.unidadId,
-        gestionId: gestionActiva.id,
-      },
-      include: {
-        item: {
-          include: {
-            objeto: true,
-          },
-        },
-      },
+      where: { unidadId: user.unidadId, gestionId: gestionActiva.id },
+      include: { item: { include: { objeto: true } } },
       orderBy: { createdAt: "asc" },
     }),
     obtenerResumenUnidad(unidad.id, gestionActiva.id),
@@ -64,16 +56,35 @@ export default async function UnidadPage({ searchParams }: UnidadPageProps) {
           include: { objeto: true },
         })
       : null,
+    prisma.itemObligatorio.findMany({
+      where: { gestionId: gestionActiva.id },
+      include: { item: { include: { objeto: true } } },
+    }),
   ]);
+
+  const codigosRegistrados = new Set(detalles.map((d) => d.itemCodigo));
+  const obligatoriosPendientes = itemsObligatorios.filter(
+    (o) => !codigosRegistrados.has(o.itemCodigo),
+  );
+
+  // Serializar detalles para pasar al Client Component (sin objetos Decimal)
+  const detallesSerializados = detalles.map((d) => ({
+    id: d.id,
+    itemCodigo: d.itemCodigo,
+    itemNombre: d.item.nombre,
+    objetoCodigo: d.item.objetoCodigo,
+    objetoDescripcion: d.item.objeto.descripcion,
+    cantidad: d.cantidad.toString(),
+    precioUnitario: d.precioUnitario.toString(),
+    subtotal: d.subtotal.toString(),
+  }));
 
   return (
     <main className="min-h-screen bg-slate-100 text-slate-950">
-      <header className="border-b border-slate-200 bg-white">
+      <header className="sticky top-0 z-50 border-b border-slate-200 bg-white">
         <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-4 px-6 py-5">
           <div>
-            <p className="text-sm font-medium text-slate-500">
-              {user.nombreCompleto}
-            </p>
+            <p className="text-sm font-medium text-slate-500">{user.nombreCompleto}</p>
             <h1 className="text-2xl font-semibold">{unidad.nombre}</h1>
           </div>
           <form action={logoutAction}>
@@ -85,25 +96,81 @@ export default async function UnidadPage({ searchParams }: UnidadPageProps) {
       </header>
 
       <section className="mx-auto grid w-full max-w-6xl gap-6 px-6 py-8">
+        {/* Métricas */}
         <div className="grid gap-4 sm:grid-cols-3">
           <Metric label="Tope" value={formatMoney(resumen.montoTope)} />
           <Metric label="Utilizado" value={formatMoney(resumen.utilizado)} />
           <Metric label="Disponible" value={formatMoney(resumen.disponible)} />
         </div>
 
-        {params?.created ? (
-          <Alert tone="success" message="Item agregado correctamente." />
-        ) : null}
-
-        {params?.error ? (
+        {/* Alertas */}
+        {params?.created && <Alert tone="success" message="Ítem agregado correctamente." />}
+        {params?.updated && <Alert tone="success" message="Ítem actualizado correctamente." />}
+        {params?.deleted && <Alert tone="success" message="Ítem eliminado correctamente." />}
+        {params?.error && (
           <Alert tone="error" message={decodeURIComponent(params.error)} />
-        ) : null}
+        )}
 
+        {/* Bloque de ítems obligatorios */}
+        {itemsObligatorios.length > 0 && (
+          <div className="rounded-lg border border-amber-200 bg-amber-50 p-5">
+            <div className="flex items-start gap-3">
+              <span className="mt-0.5 text-lg">⚠️</span>
+              <div className="flex-1">
+                <h2 className="text-sm font-semibold text-amber-800">
+                  Ítems obligatorios — Gestión {gestionActiva.anio}
+                </h2>
+                <p className="mt-0.5 text-xs text-amber-700">
+                  El administrador requiere que registres estos ítems. Los marcados en verde ya
+                  están en tu presupuesto.
+                </p>
+                <ul className="mt-3 grid gap-2 sm:grid-cols-2">
+                  {itemsObligatorios.map((o) => {
+                    const completado = codigosRegistrados.has(o.itemCodigo);
+                    return (
+                      <li
+                        key={o.itemCodigo}
+                        className={`flex items-start gap-2 rounded-md border px-3 py-2 text-xs ${
+                          completado
+                            ? "border-emerald-200 bg-emerald-50 text-emerald-800"
+                            : "border-amber-200 bg-white text-amber-900"
+                        }`}
+                      >
+                        <span className="mt-0.5 shrink-0">{completado ? "✅" : "🔲"}</span>
+                        <span>
+                          <span className="font-medium">
+                            {o.itemCodigo} — {o.item.nombre}
+                          </span>
+                          <span className="block text-amber-600">
+                            {o.item.objetoCodigo} — {o.item.objeto.descripcion}
+                          </span>
+                        </span>
+                      </li>
+                    );
+                  })}
+                </ul>
+                {obligatoriosPendientes.length === 0 ? (
+                  <p className="mt-3 text-xs font-semibold text-emerald-700">
+                    ✅ Todos los ítems obligatorios ya están registrados.
+                  </p>
+                ) : (
+                  <p className="mt-3 text-xs font-semibold text-amber-800">
+                    Faltan {obligatoriosPendientes.length} de {itemsObligatorios.length} ítems
+                    obligatorios.
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Buscar + Agregar */}
         <section className="grid gap-6 lg:grid-cols-[420px_1fr]">
+          {/* Panel izquierdo: Buscar */}
           <div className="rounded-lg border border-slate-200 bg-white p-5">
-            <h2 className="text-base font-semibold">Buscar item</h2>
+            <h2 className="text-base font-semibold">Buscar ítem</h2>
             <p className="mt-1 text-sm text-slate-500">
-              Busca por codigo, descripcion, objeto o nombre del item.
+              Busca por código, descripción, objeto o nombre.
             </p>
 
             <form className="mt-4 flex gap-2">
@@ -119,53 +186,51 @@ export default async function UnidadPage({ searchParams }: UnidadPageProps) {
             </form>
 
             <div className="mt-4 grid gap-2">
-              {query && resultados.length === 0 ? (
+              {query && resultados.length === 0 && (
                 <p className="rounded-md bg-slate-50 px-3 py-3 text-sm text-slate-500">
-                  No se encontraron items.
+                  No se encontraron ítems.
                 </p>
-              ) : null}
-
+              )}
               {resultados.map((item) => (
                 <a
+                  key={item.codigo}
                   className={`rounded-md border px-3 py-3 text-sm hover:bg-slate-50 ${
                     item.codigo === selectedItemCode
                       ? "border-slate-950 bg-slate-50"
                       : "border-slate-200"
                   }`}
-                  href={`/unidad?q=${encodeURIComponent(query)}&item=${encodeURIComponent(
-                    item.codigo,
-                  )}`}
-                  key={item.codigo}
+                  href={`/unidad?q=${encodeURIComponent(query)}&item=${encodeURIComponent(item.codigo)}`}
                 >
                   <p className="font-medium">
-                    {item.codigo} - {item.nombre}
+                    {item.codigo} — {item.nombre}
                   </p>
                   <p className="mt-1 text-slate-500">
-                    {item.objetoCodigo} - {item.objeto.descripcion}
+                    {item.objetoCodigo} — {item.objeto.descripcion}
                   </p>
                 </a>
               ))}
             </div>
           </div>
 
+          {/* Panel derecho: Agregar */}
           <div className="rounded-lg border border-slate-200 bg-white p-5">
             <h2 className="text-base font-semibold">Agregar a mi presupuesto</h2>
             <p className="mt-1 text-sm text-slate-500">
-              Selecciona un item y registra cantidad y precio unitario.
+              Selecciona un ítem y registra cantidad y precio unitario.
             </p>
 
             {selectedItem ? (
               <div className="mt-4 rounded-md bg-slate-50 p-4">
                 <p className="text-sm font-medium">
-                  {selectedItem.objetoCodigo} - {selectedItem.objeto.descripcion}
+                  {selectedItem.objetoCodigo} — {selectedItem.objeto.descripcion}
                 </p>
                 <p className="mt-1 text-sm text-slate-600">
-                  {selectedItem.codigo} - {selectedItem.nombre}
+                  {selectedItem.codigo} — {selectedItem.nombre}
                 </p>
               </div>
             ) : (
               <div className="mt-4 rounded-md bg-slate-50 p-4 text-sm text-slate-500">
-                Elige un item de la lista de busqueda para habilitar el formulario.
+                Elige un ítem de la lista de búsqueda para habilitar el formulario.
               </div>
             )}
 
@@ -203,64 +268,21 @@ export default async function UnidadPage({ searchParams }: UnidadPageProps) {
                 className="mt-6 h-11 rounded-md bg-slate-950 px-4 text-sm font-semibold text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-400"
                 disabled={!selectedItem}
               >
-                Agregar item
+                Agregar ítem
               </button>
             </form>
           </div>
         </section>
 
+        {/* Tabla con acciones (Client Component) */}
         <section className="rounded-lg border border-slate-200 bg-white p-5">
-          <div className="flex items-center justify-between gap-4">
+          <div className="mb-4 flex items-center justify-between gap-4">
             <div>
               <h2 className="text-base font-semibold">Mi lista de presupuesto</h2>
-              <p className="text-sm text-slate-500">Gestion {gestionActiva.anio}</p>
+              <p className="text-sm text-slate-500">Gestión {gestionActiva.anio}</p>
             </div>
           </div>
-
-          <div className="mt-4 overflow-x-auto rounded-md border border-slate-200">
-            <table className="w-full min-w-[900px] border-collapse text-sm">
-              <thead className="bg-slate-50 text-left text-slate-500">
-                <tr>
-                  <th className="px-3 py-2 font-medium">NRO</th>
-                  <th className="px-3 py-2 font-medium">OBJETO</th>
-                  <th className="px-3 py-2 font-medium">OBJETO DESCRIPCION</th>
-                  <th className="px-3 py-2 font-medium">ITEM</th>
-                  <th className="px-3 py-2 text-right font-medium">CANTIDAD</th>
-                  <th className="px-3 py-2 text-right font-medium">PRECIO UNITARIO</th>
-                  <th className="px-3 py-2 text-right font-medium">MONTO</th>
-                </tr>
-              </thead>
-              <tbody>
-                {detalles.length === 0 ? (
-                  <tr>
-                    <td className="px-3 py-6 text-center text-slate-500" colSpan={7}>
-                      Todavia no hay items en tu lista.
-                    </td>
-                  </tr>
-                ) : (
-                  detalles.map((detalle, index) => (
-                    <tr className="border-t border-slate-200" key={detalle.id}>
-                      <td className="px-3 py-3">{index + 1}</td>
-                      <td className="px-3 py-3">{detalle.item.objetoCodigo}</td>
-                      <td className="px-3 py-3">{detalle.item.objeto.descripcion}</td>
-                      <td className="px-3 py-3">
-                        {detalle.itemCodigo} - {detalle.item.nombre}
-                      </td>
-                      <td className="px-3 py-3 text-right">
-                        {detalle.cantidad.toString()}
-                      </td>
-                      <td className="px-3 py-3 text-right">
-                        {formatMoney(detalle.precioUnitario)}
-                      </td>
-                      <td className="px-3 py-3 text-right font-medium">
-                        {formatMoney(detalle.subtotal)}
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
+          <TablaConAcciones detalles={detallesSerializados} />
         </section>
       </section>
     </main>
@@ -272,11 +294,8 @@ function Alert({ tone, message }: { tone: "success" | "error"; message: string }
     tone === "success"
       ? "border-emerald-200 bg-emerald-50 text-emerald-700"
       : "border-red-200 bg-red-50 text-red-700";
-
   return (
-    <div className={`rounded-md border px-3 py-2 text-sm ${styles}`}>
-      {message}
-    </div>
+    <div className={`rounded-md border px-3 py-2 text-sm ${styles}`}>{message}</div>
   );
 }
 

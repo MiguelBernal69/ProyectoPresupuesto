@@ -112,45 +112,29 @@ export async function crearDetallePresupuesto(input: CrearDetalleInput) {
       },
     });
 
-    const utilizadosObligatorios = await validarItemsObligatorios(
-      tx,
-      input.gestionId,
-      input.unidadId,
-    );
-
-    if (utilizadosObligatorios.includes(input.itemCodigo)) {
-      throw new Error("Este item es obligatorio y ya fue registrado previamente.");
-    }
-
-    const faltantes = await validarItemsObligatorios(tx, input.gestionId, input.unidadId);
-    const yaExisten = new Set(
-      (await tx.detallePresupuesto.findMany({
-        where: {
+    // Verificar si el ítem ya fue registrado previamente
+    const yaExiste = await tx.detallePresupuesto.findUnique({
+      where: {
+        unidadId_gestionId_itemCodigo: {
           unidadId: input.unidadId,
           gestionId: input.gestionId,
+          itemCodigo: input.itemCodigo,
         },
-        select: { itemCodigo: true },
-      })).map((detalle) => detalle.itemCodigo),
-    );
-
-    const itemObligatorio = await tx.itemObligatorio.findFirst({
-      where: {
-        gestionId: input.gestionId,
-        itemCodigo: input.itemCodigo,
       },
     });
 
-    if (itemObligatorio) {
-      const yaExiste = yaExisten.has(input.itemCodigo);
-      if (yaExiste) {
-        throw new Error("Este item obligatorio ya fue registrado.");
-      }
+    if (yaExiste) {
+      throw new Error("Este ítem ya fue registrado en el presupuesto.");
     }
 
-    const faltantesDespues = await validarItemsObligatorios(tx, input.gestionId, input.unidadId);
-    if (faltantesDespues.length > 0 && !faltantesDespues.includes(input.itemCodigo)) {
+    // Obtener ítems obligatorios aún no registrados por esta unidad
+    const itemsFaltantes = await validarItemsObligatorios(tx, input.gestionId, input.unidadId);
+
+    // Si hay ítems obligatorios pendientes y el ítem actual NO es uno de ellos,
+    // bloquear hasta que se registren primero los obligatorios.
+    if (itemsFaltantes.length > 0 && !itemsFaltantes.includes(input.itemCodigo)) {
       throw new Error(
-        `Debes registrar primero los items obligatorios antes de agregar otros: ${faltantesDespues.join(", ")}`,
+        `Debes registrar primero los ítems obligatorios: ${itemsFaltantes.join(", ")}`,
       );
     }
 
@@ -171,5 +155,105 @@ export async function crearDetallePresupuesto(input: CrearDetalleInput) {
         subtotal,
       },
     });
+  });
+}
+
+// ── Actualizar ─────────────────────────────────────────────────────────────
+
+type ActualizarDetalleInput = {
+  id: number;
+  unidadId: number;
+  cantidad: number;
+  precioUnitario: number;
+};
+
+export async function actualizarDetallePresupuesto(input: ActualizarDetalleInput) {
+  const cantidad = new Prisma.Decimal(input.cantidad);
+  const precioUnitario = new Prisma.Decimal(input.precioUnitario);
+  const nuevoSubtotal = cantidad.mul(precioUnitario);
+
+  if (cantidad.lte(0) || precioUnitario.lte(0)) {
+    throw new Error("La cantidad y el precio unitario deben ser mayores a cero.");
+  }
+
+  return prisma.$transaction(async (tx) => {
+    const detalle = await tx.detallePresupuesto.findUnique({
+      where: { id: input.id },
+      select: { id: true, unidadId: true, gestionId: true },
+    });
+
+    if (!detalle || detalle.unidadId !== input.unidadId) {
+      throw new Error("El detalle no existe o no pertenece a tu unidad.");
+    }
+
+    const gestion = await tx.gestion.findUnique({
+      where: { id: detalle.gestionId },
+      select: { estado: true },
+    });
+
+    if (gestion?.estado !== EstadoGestion.ABIERTA) {
+      throw new Error("La gestión está cerrada y no permite cambios.");
+    }
+
+    const tope = await tx.topeUnidad.findUnique({
+      where: {
+        unidadId_gestionId: {
+          unidadId: input.unidadId,
+          gestionId: detalle.gestionId,
+        },
+      },
+    });
+
+    if (!tope) {
+      throw new Error("La unidad no tiene un tope asignado para esta gestión.");
+    }
+
+    // Total excluyendo el ítem que se está editando
+    const totalSinEste = await tx.detallePresupuesto.aggregate({
+      where: {
+        unidadId: input.unidadId,
+        gestionId: detalle.gestionId,
+        id: { not: input.id },
+      },
+      _sum: { subtotal: true },
+    });
+
+    const utilizadoSinEste = totalSinEste._sum.subtotal ?? new Prisma.Decimal(0);
+    const nuevoTotal = utilizadoSinEste.plus(nuevoSubtotal);
+
+    if (nuevoTotal.gt(tope.montoTope)) {
+      throw new Error("El nuevo monto supera el tope presupuestario de la unidad.");
+    }
+
+    return tx.detallePresupuesto.update({
+      where: { id: input.id },
+      data: { cantidad, precioUnitario, subtotal: nuevoSubtotal },
+    });
+  });
+}
+
+// ── Eliminar ───────────────────────────────────────────────────────────────
+
+export async function eliminarDetallePresupuesto(id: number, unidadId: number) {
+  return prisma.$transaction(async (tx) => {
+    const detalle = await tx.detallePresupuesto.findUnique({
+      where: { id },
+      select: { unidadId: true, gestionId: true },
+    });
+
+    if (!detalle || detalle.unidadId !== unidadId) {
+      throw new Error("El detalle no existe o no pertenece a tu unidad.");
+    }
+
+    const gestion = await tx.gestion.findUnique({
+      where: { id: detalle.gestionId },
+      select: { estado: true },
+    });
+
+    if (gestion?.estado !== EstadoGestion.ABIERTA) {
+      throw new Error("La gestión está cerrada y no permite eliminar ítems.");
+    }
+
+    await tx.detallePresupuesto.delete({ where: { id } });
   });
 }
