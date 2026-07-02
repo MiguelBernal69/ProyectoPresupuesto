@@ -27,7 +27,7 @@ export default async function ItemsObligatoriosPage() {
       : [],
   ]);
 
-  const obligatorioCodigos = obligatorios.map((item) => item.itemCodigo);
+  const obligatorioCodigos = obligatorios.map((item: { itemCodigo: string }) => item.itemCodigo);
 
   return (
     <main className="min-h-screen bg-slate-100 text-slate-950">
