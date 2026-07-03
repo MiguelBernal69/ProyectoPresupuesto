@@ -82,11 +82,31 @@ export default async function UnidadPage({ searchParams }: UnidadPageProps) {
   return (
     <main className="min-h-screen bg-slate-100 text-slate-950">
       <header className="sticky top-0 z-50 border-b border-slate-200 bg-white">
-        <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-4 px-6 py-5">
+        <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-4 px-6 py-4">
           <div>
             <p className="text-sm font-medium text-slate-500">{user.nombreCompleto}</p>
-            <h1 className="text-2xl font-semibold">{unidad.nombre}</h1>
+            <h1 className="text-xl font-semibold">{unidad.nombre}</h1>
           </div>
+          
+          <div className="hidden flex-1 items-center justify-center gap-4 lg:flex">
+            <div className="flex gap-4 rounded-lg border border-slate-200 bg-slate-50/50 p-1.5">
+              <div className="px-3 py-1">
+                <p className="text-xs font-medium text-slate-500">Tope</p>
+                <p className="text-sm font-semibold">{formatMoney(resumen.montoTope)}</p>
+              </div>
+              <div className="w-px bg-slate-200"></div>
+              <div className="px-3 py-1">
+                <p className="text-xs font-medium text-slate-500">Utilizado</p>
+                <p className="text-sm font-semibold">{formatMoney(resumen.utilizado)}</p>
+              </div>
+              <div className="w-px bg-slate-200"></div>
+              <div className="rounded-md bg-white px-3 py-1 shadow-sm ring-1 ring-slate-200/50">
+                <p className="text-xs font-medium text-emerald-600">Disponible</p>
+                <p className="text-sm font-semibold text-emerald-900">{formatMoney(resumen.disponible)}</p>
+              </div>
+            </div>
+          </div>
+
           <form action={logoutAction}>
             <button className="h-10 rounded-md border border-slate-300 px-4 text-sm font-medium hover:bg-slate-50">
               Salir
@@ -96,12 +116,7 @@ export default async function UnidadPage({ searchParams }: UnidadPageProps) {
       </header>
 
       <section className="mx-auto grid w-full max-w-6xl gap-6 px-6 py-8">
-        {/* Métricas */}
-        <div className="grid gap-4 sm:grid-cols-3">
-          <Metric label="Tope" value={formatMoney(resumen.montoTope)} />
-          <Metric label="Utilizado" value={formatMoney(resumen.utilizado)} />
-          <Metric label="Disponible" value={formatMoney(resumen.disponible)} />
-        </div>
+
 
         {/* Alertas */}
         {params?.created && <Alert tone="success" message="Ítem agregado correctamente." />}
