@@ -55,28 +55,60 @@ export default async function AdminUnidadesPage({
       })
     : [];
 
+  const resumen = unidades.reduce(
+    (total, unidad) => {
+      const tope = unidad.topes[0]?.montoTope ?? new Prisma.Decimal(0);
+      const utilizado = unidad.detallesPresupuesto.reduce(
+        (subtotal, detalle) => subtotal.plus(detalle.subtotal),
+        new Prisma.Decimal(0),
+      );
+
+      return {
+        tope: total.tope.plus(tope),
+        utilizado: total.utilizado.plus(utilizado),
+      };
+    },
+    {
+      tope: new Prisma.Decimal(0),
+      utilizado: new Prisma.Decimal(0),
+    },
+  );
+
+  const disponible = resumen.tope.minus(resumen.utilizado);
+
   return (
     <main className="min-h-screen bg-slate-100 text-slate-950">
       <header className="sticky top-0 z-50 border-b border-slate-200 bg-white">
-        <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-4 px-6 py-5">
-          <div>
-            <p className="text-sm font-medium text-slate-500">
-              {user.nombreCompleto}
-            </p>
-            <h1 className="text-2xl font-semibold">Unidades y topes</h1>
-          </div>
-          <div className="flex items-center gap-3">
-            <Link
-              className="h-10 rounded-md border border-slate-300 px-4 py-2 text-sm font-medium hover:bg-slate-50"
-              href="/admin"
-            >
-              Volver
-            </Link>
-            <form action={logoutAction}>
-              <button className="h-10 rounded-md border border-slate-300 px-4 text-sm font-medium hover:bg-slate-50">
-                Salir
-              </button>
-            </form>
+        <div className="mx-auto w-full max-w-6xl px-6 py-4">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+              <p className="text-sm font-medium text-slate-500">
+                {user.nombreCompleto}
+              </p>
+              <h1 className="text-2xl font-semibold">Unidades y topes</h1>
+            </div>
+            <div className="flex flex-wrap items-center justify-start gap-3 lg:justify-end">
+              <BudgetSummaryCard label="Tope" value={formatMoney(resumen.tope)} />
+              <BudgetSummaryCard
+                label="Utilizado"
+                value={formatMoney(resumen.utilizado)}
+              />
+              <BudgetSummaryCard
+                label="Disponible"
+                value={formatMoney(disponible)}
+              />
+              <Link
+                className="h-10 rounded-md border border-slate-300 px-4 py-2 text-sm font-medium hover:bg-slate-50"
+                href="/admin"
+              >
+                Volver
+              </Link>
+              <form action={logoutAction}>
+                <button className="h-10 rounded-md border border-slate-300 px-4 text-sm font-medium hover:bg-slate-50">
+                  Salir
+                </button>
+              </form>
+            </div>
           </div>
         </div>
       </header>
@@ -277,6 +309,17 @@ function BudgetValue({ label, value }: { label: string; value: string }) {
     <div className="rounded-md bg-slate-50 px-3 py-2">
       <p className="text-xs font-medium text-slate-500">{label}</p>
       <p className="mt-1 text-sm font-semibold">{value}</p>
+    </div>
+  );
+}
+
+function BudgetSummaryCard({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2">
+      <p className="text-[11px] font-medium uppercase tracking-wide text-slate-500">
+        {label}
+      </p>
+      <p className="mt-1 text-sm font-semibold text-slate-950">{value}</p>
     </div>
   );
 }
