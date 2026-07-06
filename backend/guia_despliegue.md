@@ -15,9 +15,12 @@ Ingresa a tu servidor mediante SSH y sigue estos pasos:
 git clone https://github.com/MiguelBernal69/ProyectoPresupuesto.git
 cd ProyectoPresupuesto
 
-# 2. (Opcional) Modificar contraseñas y secretos
-# Edita el archivo docker-compose.yml para cambiar POSTGRES_PASSWORD y SESSION_SECRET por valores seguros.
-nano docker-compose.yml
+# 2. Configurar variables de entorno (¡Muy importante!)
+# Copia la plantilla de variables de entorno
+cp backend/.env.example .env
+
+# Abre el archivo .env con un editor de texto (como nano) y coloca contraseñas reales
+nano .env
 ```
 
 ## 3. Construir y Levantar los Contenedores
