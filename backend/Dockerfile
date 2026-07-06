@@ -44,6 +44,9 @@ ENV NEXT_TELEMETRY_DISABLED=1
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
+# Instalar prisma CLI globalmente para poder correr migraciones desde el contenedor
+RUN npm install -g prisma@6
+
 # Copiar archivos públicos
 COPY --from=builder /app/public ./public
 
