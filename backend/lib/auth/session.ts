@@ -38,7 +38,7 @@ export async function createSession(user: SessionUser) {
   cookieStore.set(SESSION_COOKIE, `${payload}.${signature}`, {
     httpOnly: true,
     sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
+    secure: process.env.NODE_ENV === "production" && process.env.HTTPS === "true",
     maxAge: ONE_DAY_SECONDS,
     path: "/",
   });
