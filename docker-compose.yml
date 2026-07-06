@@ -19,7 +19,7 @@ services:
       context: ./backend
       dockerfile: Dockerfile
       args:
-      DATABASE_URL: ${DATABASE_URL}
+        DATABASE_URL: ${DATABASE_URL}
     container_name: presupuesto_web
     restart: always
     ports:
