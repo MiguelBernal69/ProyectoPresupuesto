@@ -22,8 +22,11 @@ COPY . .
 # Deshabilitar telemetría
 ENV NEXT_TELEMETRY_DISABLED=1
 
-# Proveer una URL de BD falsa solo para que Prisma pueda compilar el cliente sin llorar
-ENV DATABASE_URL="postgresql://fake_user:fake_password@localhost:5432/fake_db"
+# # Proveer una URL de BD falsa solo para que Prisma pueda compilar el cliente sin llorar
+# ENV DATABASE_URL="postgresql://fake_user:fake_password@localhost:5432/fake_db"
+
+ARG DATABASE_URL
+ENV DATABASE_URL=$DATABASE_URL
 
 # Generar cliente de Prisma y construir la app
 RUN npx prisma generate
