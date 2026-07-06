@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { editarDetalleAction, eliminarDetalleAction } from "./actions";
 
 type DetalleRow = {
@@ -23,13 +23,57 @@ function formatMoney(valor: string) {
 
 export default function TablaConAcciones({ detalles }: { detalles: DetalleRow[] }) {
   const [editando, setEditando] = useState<DetalleRow | null>(null);
+  const [vista, setVista] = useState<"lista" | "agrupada">("lista");
 
   const cerrarModal = () => setEditando(null);
 
+  const groupedData = useMemo(() => {
+    const groups = new Map<string, {
+      objetoCodigo: string;
+      objetoDescripcion: string;
+      total: number;
+    }>();
+
+    for (const d of detalles) {
+      const current = groups.get(d.objetoCodigo) || {
+        objetoCodigo: d.objetoCodigo,
+        objetoDescripcion: d.objetoDescripcion,
+        total: 0,
+      };
+      current.total += Number(d.subtotal);
+      groups.set(d.objetoCodigo, current);
+    }
+    
+    return Array.from(groups.values()).sort((a, b) => a.objetoCodigo.localeCompare(b.objetoCodigo));
+  }, [detalles]);
+
   return (
     <>
-      {/* ── Tabla ─────────────────────────────────────────────── */}
-      <div className="overflow-x-auto rounded-md border border-slate-200">
+      <div className="mb-4 flex gap-2">
+        <button
+          onClick={() => setVista("lista")}
+          className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+            vista === "lista"
+              ? "bg-slate-900 text-white shadow-sm"
+              : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+          }`}
+        >
+          Vista Detallada
+        </button>
+        <button
+          onClick={() => setVista("agrupada")}
+          className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+            vista === "agrupada"
+              ? "bg-slate-900 text-white shadow-sm"
+              : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+          }`}
+        >
+          Agrupado por Objeto
+        </button>
+      </div>
+      {/* ── Tablas ─────────────────────────────────────────────── */}
+      {vista === "lista" ? (
+        <div className="overflow-x-auto rounded-md border border-slate-200">
         <table className="w-full min-w-[960px] border-collapse text-sm">
           <thead className="bg-slate-50 text-left text-slate-500">
             <tr>
@@ -100,7 +144,47 @@ export default function TablaConAcciones({ detalles }: { detalles: DetalleRow[] 
             )}
           </tbody>
         </table>
-      </div>
+        </div>
+      ) : (
+        <div className="overflow-x-auto rounded-md border border-slate-200">
+          <table className="w-full min-w-[600px] border-collapse text-sm">
+            <thead className="bg-slate-50 text-left text-slate-500">
+              <tr>
+                <th className="px-3 py-2 font-medium">OBJETO</th>
+                <th className="px-3 py-2 font-medium">DESCRIPCIÓN</th>
+                <th className="px-3 py-2 text-right font-medium">MONTO TOTAL</th>
+              </tr>
+            </thead>
+            <tbody>
+              {groupedData.length === 0 ? (
+                <tr>
+                  <td className="px-3 py-8 text-center text-slate-400" colSpan={3}>
+                    Todavía no hay ítems en tu lista.
+                  </td>
+                </tr>
+              ) : (
+                groupedData.map((g) => (
+                  <tr className="border-t border-slate-200 hover:bg-slate-50" key={g.objetoCodigo}>
+                    <td className="px-3 py-3 font-medium">{g.objetoCodigo}</td>
+                    <td className="px-3 py-3">{g.objetoDescripcion}</td>
+                    <td className="px-3 py-3 text-right font-medium">{formatMoney(g.total.toString())}</td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+            {groupedData.length > 0 && (
+              <tfoot className="bg-slate-50">
+                <tr className="border-t border-slate-200">
+                  <td colSpan={2} className="px-3 py-3 text-right font-medium text-slate-500">TOTAL PRESUPUESTO</td>
+                  <td className="px-3 py-3 text-right font-semibold text-slate-900">
+                    {formatMoney(groupedData.reduce((acc, g) => acc + g.total, 0).toString())}
+                  </td>
+                </tr>
+              </tfoot>
+            )}
+          </table>
+        </div>
+      )}
 
       {/* ── Modal de edición ───────────────────────────────────── */}
       {editando && (

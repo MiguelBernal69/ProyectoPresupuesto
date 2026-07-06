@@ -9,7 +9,7 @@ const connectionString = process.env.DATABASE_URL;
 const adapter = new PrismaPg({ connectionString });
 const prisma = new PrismaClient({ adapter });
 
-const filePath = path.join(process.cwd(), "data", "catalogo.xlsx");
+const filePath = path.join(process.cwd(), "data", "Catalogo_Presupuestario_Normalizado.xlsx");
 
 function normalize(value) {
   return String(value ?? "").trim();
@@ -45,7 +45,7 @@ async function main() {
 
   for (const row of rows) {
     const objetoCodigo = normalize(
-      pickFirst(row, ["PARTIDA", "OBJETO", "CODIGO_OBJETO", "CODIGO"]),
+      pickFirst(row, ["PARTIDA", "OBJETO", "CODIGO_OBJETO", "CODIGO", "Código Objeto de Gasto (5 Dígitos)"]),
     );
     const objetoDescripcion = normalize(
       pickFirst(row, [
@@ -53,11 +53,12 @@ async function main() {
         "DESCRIPCION OBJETO",
         "NOMBRE OBJETO",
         "DESCRIPCION",
+        "Nombre de Objeto de Gasto (Clasificador)",
       ]),
     );
-    const itemCodigo = normalize(pickFirst(row, ["ITEM", "CODIGO_ITEM"]));
+    const itemCodigo = normalize(pickFirst(row, ["ITEM", "CODIGO_ITEM", "Código de Ítem"]));
     const itemNombre = normalize(
-      pickFirst(row, ["NOMBRE", "MOMBRE", "ITEM DESCRIPCION", "DESCRIPCION ITEM"]),
+      pickFirst(row, ["NOMBRE", "MOMBRE", "ITEM DESCRIPCION", "DESCRIPCION ITEM", "Descripción de Ítem"]),
     );
 
     if (!objetoCodigo || !itemCodigo || !itemNombre) {
