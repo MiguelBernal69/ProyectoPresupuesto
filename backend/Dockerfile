@@ -1,39 +1,41 @@
 FROM node:20-alpine AS base
 
-# Dependencias base
+# ─── STAGE 1: Instalar dependencias ───────────────────────────────────────────
 FROM base AS deps
-RUN apk add --no-cache libc6-compat openssl
+# openssl y libc6-compat son necesarios para los binarios de Prisma en Alpine
+RUN apk add --no-cache libc6-compat openssl openssl-dev
 WORKDIR /app
 
-# Copiar archivos de dependencias
 COPY package.json package-lock.json* ./
 COPY prisma ./prisma/
 
-# Instalar dependencias
+# Instalar dependencias exactas del lockfile
 RUN npm ci
 
-# Construcción
+# ─── STAGE 2: Build ───────────────────────────────────────────────────────────
 FROM base AS builder
-RUN apk add --no-cache openssl
+RUN apk add --no-cache openssl openssl-dev
 WORKDIR /app
+
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Deshabilitar telemetría
 ENV NEXT_TELEMETRY_DISABLED=1
 
-# # Proveer una URL de BD falsa solo para que Prisma pueda compilar el cliente sin llorar
-# ENV DATABASE_URL="postgresql://fake_user:fake_password@localhost:5432/fake_db"
-
+# DATABASE_URL se pasa como build arg para que Prisma pueda generar el cliente
 ARG DATABASE_URL
 ENV DATABASE_URL=$DATABASE_URL
 
-# Generar cliente de Prisma y construir la app
+# Generar cliente de Prisma (usa los binarios para linux-musl-openssl-3.0.x)
 RUN npx prisma generate
+
+# Construir la app Next.js en modo standalone
 RUN npm run build
 
-# Imagen de producción
+# ─── STAGE 3: Runner (imagen de producción) ───────────────────────────────────
 FROM base AS runner
+# openssl es necesario en runtime para que Prisma funcione en Alpine
+RUN apk add --no-cache openssl openssl-dev
 WORKDIR /app
 
 ENV NODE_ENV=production
@@ -42,17 +44,24 @@ ENV NEXT_TELEMETRY_DISABLED=1
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
-# Copiar archivos públicos y prisma (necesario si quieres correr migraciones desde el contenedor)
+# Copiar archivos públicos
 COPY --from=builder /app/public ./public
+
+# Copiar carpeta prisma (para poder correr migraciones desde el contenedor)
 COPY --from=builder /app/prisma ./prisma
 
-# Copiar archivos generados por el modo standalone
+# Copiar el build standalone
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
-# Crear directorio de datos (si suben archivos localmente, útil montar volumen aquí)
+# Crear directorios de datos
 RUN mkdir -p /app/uploads && chown nextjs:nodejs /app/uploads
 RUN mkdir -p /app/data && chown nextjs:nodejs /app/data
+
+# Copiar node_modules de prisma al runner (necesario para migraciones y cliente)
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules/.prisma ./node_modules/.prisma
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules/@prisma ./node_modules/@prisma
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules/prisma ./node_modules/prisma
 
 USER nextjs
 
@@ -61,5 +70,4 @@ EXPOSE 3000
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
-# Iniciar la aplicación
 CMD ["node", "server.js"]

@@ -1,12 +1,9 @@
 require("dotenv/config");
 
 const bcrypt = require("bcryptjs");
-const { PrismaPg } = require("@prisma/adapter-pg");
 const { PrismaClient } = require("@prisma/client");
 
-const connectionString = process.env.DATABASE_URL;
-const adapter = new PrismaPg({ connectionString });
-const prisma = new PrismaClient({ adapter });
+const prisma = new PrismaClient();
 
 async function main() {
   const anioActual = new Date().getFullYear();

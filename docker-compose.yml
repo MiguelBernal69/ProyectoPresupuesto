@@ -13,6 +13,13 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    # Healthcheck para que el servicio web espere a que Postgres esté listo
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
 
   web:
     build:
@@ -29,7 +36,8 @@ services:
       - NODE_ENV=production
       - SESSION_SECRET=${SESSION_SECRET}
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     volumes:
       - ./backend/data:/app/data
       - ./backend/uploads:/app/uploads
