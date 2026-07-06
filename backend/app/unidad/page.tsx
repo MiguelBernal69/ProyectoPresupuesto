@@ -128,55 +128,78 @@ export default async function UnidadPage({ searchParams }: UnidadPageProps) {
 
         {/* Bloque de ítems obligatorios */}
         {itemsObligatorios.length > 0 && (
-          <div className="rounded-lg border border-amber-200 bg-amber-50 p-5">
-            <div className="flex items-start gap-3">
-              <span className="mt-0.5 text-lg">⚠️</span>
+          <details
+            className={`group rounded-lg border p-5 ${
+              obligatoriosPendientes.length === 0
+                ? "border-emerald-200 bg-emerald-50"
+                : "border-amber-200 bg-amber-50"
+            }`}
+            open={obligatoriosPendientes.length > 0}
+          >
+            <summary className="flex cursor-pointer list-none items-start gap-3 outline-none [&::-webkit-details-marker]:hidden">
+              <span className="mt-0.5 text-lg">
+                {obligatoriosPendientes.length === 0 ? "✅" : "⚠️"}
+              </span>
               <div className="flex-1">
-                <h2 className="text-sm font-semibold text-amber-800">
+                <h2
+                  className={`text-sm font-semibold ${
+                    obligatoriosPendientes.length === 0 ? "text-emerald-800" : "text-amber-800"
+                  }`}
+                >
                   Ítems obligatorios — Gestión {gestionActiva.anio}
                 </h2>
-                <p className="mt-0.5 text-xs text-amber-700">
-                  El administrador requiere que registres estos ítems. Los marcados en verde ya
-                  están en tu presupuesto.
-                </p>
-                <ul className="mt-3 grid gap-2 sm:grid-cols-2">
-                  {itemsObligatorios.map((o) => {
-                    const completado = codigosRegistrados.has(o.itemCodigo);
-                    return (
-                      <li
-                        key={o.itemCodigo}
-                        className={`flex items-start gap-2 rounded-md border px-3 py-2 text-xs ${
-                          completado
-                            ? "border-emerald-200 bg-emerald-50 text-emerald-800"
-                            : "border-amber-200 bg-white text-amber-900"
-                        }`}
-                      >
-                        <span className="mt-0.5 shrink-0">{completado ? "✅" : "🔲"}</span>
-                        <span>
-                          <span className="font-medium">
-                            {o.itemCodigo} — {o.item.nombre}
-                          </span>
-                          <span className="block text-amber-600">
-                            {o.item.objetoCodigo} — {o.item.objeto.descripcion}
-                          </span>
-                        </span>
-                      </li>
-                    );
-                  })}
-                </ul>
                 {obligatoriosPendientes.length === 0 ? (
-                  <p className="mt-3 text-xs font-semibold text-emerald-700">
-                    ✅ Todos los ítems obligatorios ya están registrados.
+                  <p className="mt-0.5 text-xs text-emerald-700">
+                    Todos los ítems obligatorios ya están registrados. Haz clic para ver detalles.
                   </p>
                 ) : (
-                  <p className="mt-3 text-xs font-semibold text-amber-800">
-                    Faltan {obligatoriosPendientes.length} de {itemsObligatorios.length} ítems
-                    obligatorios.
+                  <p className="mt-0.5 text-xs text-amber-700">
+                    El administrador requiere que registres estos ítems. Los marcados en verde ya
+                    están en tu presupuesto.
                   </p>
                 )}
               </div>
+              <div className="mt-0.5 text-slate-400 transition-transform group-open:rotate-180">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5">
+                  <path d="m6 9 6 6 6-6"/>
+                </svg>
+              </div>
+            </summary>
+            
+            <div className="mt-4 border-t border-black/5 pt-4">
+              <ul className="grid gap-2 sm:grid-cols-2">
+                {itemsObligatorios.map((o) => {
+                  const completado = codigosRegistrados.has(o.itemCodigo);
+                  return (
+                    <li
+                      key={o.itemCodigo}
+                      className={`flex items-start gap-2 rounded-md border px-3 py-2 text-xs ${
+                        completado
+                          ? "border-emerald-200 bg-emerald-50 text-emerald-800"
+                          : "border-amber-200 bg-white text-amber-900"
+                      }`}
+                    >
+                      <span className="mt-0.5 shrink-0">{completado ? "✅" : "🔲"}</span>
+                      <span>
+                        <span className="font-medium">
+                          {o.itemCodigo} — {o.item.nombre}
+                        </span>
+                        <span className="block text-amber-600">
+                          {o.item.objetoCodigo} — {o.item.objeto.descripcion}
+                        </span>
+                      </span>
+                    </li>
+                  );
+                })}
+              </ul>
+              {obligatoriosPendientes.length > 0 && (
+                <p className="mt-3 text-xs font-semibold text-amber-800">
+                  Faltan {obligatoriosPendientes.length} de {itemsObligatorios.length} ítems
+                  obligatorios.
+                </p>
+              )}
             </div>
-          </div>
+          </details>
         )}
 
         {/* Buscar + Agregar */}
