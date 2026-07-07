@@ -3,7 +3,10 @@ import prisma from "@/lib/db";
 import { requireRole } from "@/lib/auth/session";
 import { logoutAction } from "@/app/login/actions";
 import { buscarItemsCatalogo } from "@/lib/services/catalogo";
-import { obtenerResumenUnidad } from "@/lib/services/presupuesto";
+import {
+  listarDetallesPresupuestoOrdenados,
+  obtenerResumenUnidad,
+} from "@/lib/services/presupuesto";
 import { agregarDetalleAction } from "./actions";
 import TablaConAcciones from "./TablaConAcciones";
 
@@ -43,11 +46,7 @@ export default async function UnidadPage({ searchParams }: UnidadPageProps) {
   }
 
   const [detalles, resumen, resultados, selectedItem, itemsObligatorios] = await Promise.all([
-    prisma.detallePresupuesto.findMany({
-      where: { unidadId: user.unidadId, gestionId: gestionActiva.id },
-      include: { item: { include: { objeto: true } } },
-      orderBy: { createdAt: "asc" },
-    }),
+    listarDetallesPresupuestoOrdenados(user.unidadId, gestionActiva.id),
     obtenerResumenUnidad(unidad.id, gestionActiva.id),
     buscarItemsCatalogo(query, 12),
     selectedItemCode
@@ -57,7 +56,7 @@ export default async function UnidadPage({ searchParams }: UnidadPageProps) {
         })
       : null,
     prisma.itemObligatorio.findMany({
-      where: { gestionId: gestionActiva.id },
+      where: { gestionId: gestionActiva.id, unidadId: user.unidadId },
       include: { item: { include: { objeto: true } } },
     }),
   ]);
@@ -319,6 +318,21 @@ export default async function UnidadPage({ searchParams }: UnidadPageProps) {
               <h2 className="text-base font-semibold">Mi lista de presupuesto</h2>
               <p className="text-sm text-slate-500">Gestión {gestionActiva.anio}</p>
             </div>
+          </div>
+          <div className="mb-4 flex flex-wrap gap-2">
+            <a
+              className="h-10 rounded-md border border-slate-300 px-4 py-2 text-sm font-medium hover:bg-slate-50"
+              href="/api/unidad/presupuesto"
+            >
+              Descargar CSV
+            </a>
+            <a
+              className="h-10 rounded-md bg-slate-950 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800"
+              href="/unidad/reporte"
+              target="_blank"
+            >
+              Imprimir
+            </a>
           </div>
           <TablaConAcciones detalles={detallesSerializados} />
         </section>

@@ -7,21 +7,24 @@ export async function POST(request: Request) {
 
   const formData = await request.formData();
   const gestionId = Number(formData.get("gestionId") ?? 0);
+  const unidadId = Number(formData.get("unidadId") ?? 0);
   const itemCodigos = formData.getAll("itemCodigo").map(String);
 
-  if (!gestionId) {
-    return NextResponse.json({ error: "Gestion invalida" }, { status: 400 });
+  if (!gestionId || !unidadId) {
+    return NextResponse.json({ error: "Gestion o unidad invalida" }, { status: 400 });
   }
 
   await prisma.$transaction(async (tx) => {
-    await tx.itemObligatorio.deleteMany({ where: { gestionId } });
+    await tx.itemObligatorio.deleteMany({ where: { gestionId, unidadId } });
 
     if (itemCodigos.length) {
       await tx.itemObligatorio.createMany({
-        data: itemCodigos.map((itemCodigo) => ({ gestionId, itemCodigo })),
+        data: itemCodigos.map((itemCodigo) => ({ gestionId, unidadId, itemCodigo })),
       });
     }
   });
 
-  return NextResponse.redirect(new URL("/admin/items-obligatorios", request.url));
+  return NextResponse.redirect(
+    new URL(`/admin/items-obligatorios?unidadId=${unidadId}`, request.url),
+  );
 }

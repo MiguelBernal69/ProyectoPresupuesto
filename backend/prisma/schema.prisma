@@ -4,7 +4,6 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 enum RolUsuario {
@@ -40,6 +39,7 @@ model Unidad {
   usuarios            User[]
   topes               TopeUnidad[]
   detallesPresupuesto DetallePresupuesto[]
+  itemsObligatorios   ItemObligatorio[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -65,14 +65,17 @@ model ItemObligatorio {
   gestionId Int
   gestion   Gestion @relation(fields: [gestionId], references: [id], onDelete: Cascade)
 
+  unidadId Int
+  unidad   Unidad @relation(fields: [unidadId], references: [id], onDelete: Cascade)
+
   itemCodigo String
   item       Item   @relation(fields: [itemCodigo], references: [codigo], onDelete: Cascade)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@unique([gestionId, itemCodigo])
-  @@index([gestionId])
+  @@unique([gestionId, unidadId, itemCodigo])
+  @@index([gestionId, unidadId])
 }
 
 model TopeUnidad {

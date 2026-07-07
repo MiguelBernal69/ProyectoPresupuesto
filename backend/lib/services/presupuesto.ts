@@ -3,7 +3,7 @@ import prisma from "@/lib/db";
 
 async function validarItemsObligatorios(tx: Prisma.TransactionClient, gestionId: number, unidadId: number) {
   const obligatorios = await tx.itemObligatorio.findMany({
-    where: { gestionId },
+    where: { gestionId, unidadId },
     select: { itemCodigo: true },
   });
 
@@ -34,6 +34,25 @@ type CrearDetalleInput = {
   cantidad: number;
   precioUnitario: number;
 };
+
+export async function listarDetallesPresupuestoOrdenados(unidadId: number, gestionId: number) {
+  const detalles = await prisma.detallePresupuesto.findMany({
+    where: { unidadId, gestionId },
+    include: { item: { include: { objeto: true } } },
+  });
+
+  return detalles.sort((a, b) => {
+    const objetoCompare = a.item.objetoCodigo.localeCompare(b.item.objetoCodigo, "es", {
+      numeric: true,
+    });
+
+    if (objetoCompare !== 0) {
+      return objetoCompare;
+    }
+
+    return a.itemCodigo.localeCompare(b.itemCodigo, "es", { numeric: true });
+  });
+}
 
 export async function obtenerResumenUnidad(unidadId: number, gestionId: number) {
   const [tope, total] = await Promise.all([

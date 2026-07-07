@@ -13,11 +13,17 @@ type Props = {
   items: Item[];
   obligatorioCodigos: string[];
   gestionId: number | undefined;
+  unidadId: number | undefined;
 };
 
 const PAGE_SIZE = 100;
 
-export default function ItemsSelector({ items, obligatorioCodigos, gestionId }: Props) {
+export default function ItemsSelector({
+  items,
+  obligatorioCodigos,
+  gestionId,
+  unidadId,
+}: Props) {
   const [busqueda, setBusqueda] = useState("");
   const [seleccionados, setSeleccionados] = useState<Set<string>>(
     () => new Set(obligatorioCodigos),
@@ -66,6 +72,7 @@ export default function ItemsSelector({ items, obligatorioCodigos, gestionId }: 
   return (
     <form action="/api/admin/items-obligatorios" method="post" className="mt-5 flex flex-col gap-4">
       <input type="hidden" name="gestionId" value={gestionId ?? ""} />
+      <input type="hidden" name="unidadId" value={unidadId ?? ""} />
 
       {/* Hidden inputs para los seleccionados */}
       {Array.from(seleccionados).map((codigo) => (
