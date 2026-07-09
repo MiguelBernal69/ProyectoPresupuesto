@@ -9,6 +9,7 @@ export const dynamic = "force-dynamic";
 type ItemsObligatoriosPageProps = {
   searchParams?: Promise<{
     unidadId?: string;
+    saved?: string;
   }>;
 };
 
@@ -32,7 +33,7 @@ export default async function ItemsObligatoriosPage({
   const unidadSeleccionada =
     unidades.find((unidad) => unidad.id === unidadIdParam) ?? unidades[0] ?? null;
 
-  const [items, obligatorios] = await Promise.all([
+  const [items, obligatorios, conteosObligatorios] = await Promise.all([
     prisma.item.findMany({
       orderBy: [{ objetoCodigo: "asc" }, { codigo: "asc" }],
       include: { objeto: true },
@@ -46,11 +47,22 @@ export default async function ItemsObligatoriosPage({
           select: { itemCodigo: true },
         })
       : [],
+    gestionActiva
+      ? prisma.itemObligatorio.groupBy({
+          by: ["unidadId"],
+          where: { gestionId: gestionActiva.id },
+          _count: { _all: true },
+        })
+      : [],
   ]);
 
   const obligatorioCodigos = obligatorios.map(
     (item: { itemCodigo: string }) => item.itemCodigo,
   );
+  const conteosPorUnidad = new Map(
+    conteosObligatorios.map((conteo) => [conteo.unidadId, conteo._count._all]),
+  );
+  const guardadoCorrectamente = params?.saved === "1";
 
   return (
     <main className="min-h-screen bg-slate-100 text-slate-950">
@@ -87,20 +99,42 @@ export default async function ItemsObligatoriosPage({
 
           {gestionActiva && unidadSeleccionada ? (
             <>
+              {guardadoCorrectamente && (
+                <div className="mt-5 rounded-md border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800">
+                  Items obligatorios guardados correctamente.
+                </div>
+              )}
+
               <div className="mt-5 flex flex-wrap gap-2">
-                {unidades.map((unidad) => (
-                  <Link
-                    key={unidad.id}
-                    href={`/admin/items-obligatorios?unidadId=${unidad.id}`}
-                    className={`rounded-md border px-3 py-2 text-sm font-medium ${
-                      unidad.id === unidadSeleccionada.id
-                        ? "border-slate-950 bg-slate-950 text-white"
-                        : "border-slate-300 hover:bg-slate-50"
-                    }`}
-                  >
-                    {unidad.nombre}
-                  </Link>
-                ))}
+                {unidades.map((unidad) => {
+                  const totalObligatorios = conteosPorUnidad.get(unidad.id) ?? 0;
+                  const seleccionada = unidad.id === unidadSeleccionada.id;
+
+                  return (
+                    <Link
+                      key={unidad.id}
+                      href={`/admin/items-obligatorios?unidadId=${unidad.id}`}
+                      className={`flex items-center gap-2 rounded-md border px-3 py-2 text-sm font-medium ${
+                        seleccionada
+                          ? "border-slate-950 bg-slate-950 text-white"
+                          : "border-slate-300 hover:bg-slate-50"
+                      }`}
+                    >
+                      <span>{unidad.nombre}</span>
+                      <span
+                        className={`rounded-full px-2 py-0.5 text-xs ${
+                          seleccionada
+                            ? "bg-white text-slate-950"
+                            : totalObligatorios > 0
+                              ? "bg-emerald-100 text-emerald-800"
+                              : "bg-slate-100 text-slate-500"
+                        }`}
+                      >
+                        {totalObligatorios}
+                      </span>
+                    </Link>
+                  );
+                })}
               </div>
 
               <div className="mt-5 rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600">
@@ -111,6 +145,7 @@ export default async function ItemsObligatoriosPage({
               </div>
 
               <ItemsSelector
+                key={`${gestionActiva.id}-${unidadSeleccionada.id}`}
                 items={items}
                 obligatorioCodigos={obligatorioCodigos}
                 gestionId={gestionActiva.id}

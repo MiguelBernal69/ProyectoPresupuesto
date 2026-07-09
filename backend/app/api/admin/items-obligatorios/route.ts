@@ -25,6 +25,6 @@ export async function POST(request: Request) {
   });
 
   return NextResponse.redirect(
-    new URL(`/admin/items-obligatorios?unidadId=${unidadId}`, request.url),
+    new URL(`/admin/items-obligatorios?unidadId=${unidadId}&saved=1`, request.url),
   );
 }

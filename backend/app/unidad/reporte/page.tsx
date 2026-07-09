@@ -34,19 +34,53 @@ export default async function ReportePresupuestoPage() {
   ]);
 
   const total = detalles.reduce((sum, detalle) => sum + Number(detalle.subtotal), 0);
+  const agrupadosPorObjeto = Array.from(
+    detalles
+      .reduce(
+        (groups, detalle) => {
+          const current = groups.get(detalle.item.objetoCodigo) ?? {
+            objetoCodigo: detalle.item.objetoCodigo,
+            objetoDescripcion: detalle.item.objeto.descripcion,
+            total: 0,
+          };
+
+          current.total += Number(detalle.subtotal);
+          groups.set(detalle.item.objetoCodigo, current);
+          return groups;
+        },
+        new Map<
+          string,
+          {
+            objetoCodigo: string;
+            objetoDescripcion: string;
+            total: number;
+          }
+        >(),
+      )
+      .values(),
+  ).sort((a, b) => a.objetoCodigo.localeCompare(b.objetoCodigo));
 
   return (
-    <main className="min-h-screen bg-white p-6 text-slate-950 print:p-0">
+    <main className="min-h-screen bg-white p-3 text-slate-950 print:p-0">
       <style>
         {`
           @page {
-            size: A4 landscape;
+            size: Carta landscape;
             margin: 10mm;
           }
 
           @media print {
             body {
               background: white;
+            }
+
+            html[data-print-view="detallada"] .print-view-agrupada,
+            html[data-print-view="agrupada"] .print-view-detallada {
+              display: none !important;
+            }
+
+            .print-section + .print-section {
+              break-before: page;
             }
           }
         `}
@@ -55,7 +89,7 @@ export default async function ReportePresupuestoPage() {
       <div className="mx-auto w-full max-w-[1200px]">
         <div className="mb-5 flex items-center justify-between gap-4 print:hidden">
           <a
-            className="h-10 rounded-md border border-slate-300 px-4 py-2 text-sm font-medium hover:bg-slate-50"
+            className="h-10 rounded-md border border-slate-300 px-1 py-2 text-sm font-medium hover:bg-slate-50"
             href="/unidad"
           >
             Volver
@@ -67,7 +101,8 @@ export default async function ReportePresupuestoPage() {
             >
               Descargar CSV
             </a>
-            <PrintButton />
+            <PrintButton label="Imprimir detalle" view="detallada" />
+            <PrintButton label="Imprimir agrupado" view="agrupada" />
           </div>
         </div>
 
@@ -76,7 +111,7 @@ export default async function ReportePresupuestoPage() {
             Presupuesto por items
           </p>
           <h1 className="mt-1 text-2xl font-bold">{unidad.nombre}</h1>
-          <div className="mt-3 grid grid-cols-4 gap-3 text-sm">
+          <div className="mt-1 grid grid-cols-4 gap-3 text-sm">
             <Summary label="Gestion" value={String(gestionActiva.anio)} />
             <Summary label="Tope" value={formatMoney(resumen.montoTope)} />
             <Summary label="Utilizado" value={formatMoney(resumen.utilizado)} />
@@ -84,67 +119,128 @@ export default async function ReportePresupuestoPage() {
           </div>
         </header>
 
-        <table className="w-full border-collapse text-[11px]">
-          <thead>
-            <tr className="bg-slate-100 text-left">
-              <th className="border border-slate-300 px-2 py-2">NRO</th>
-              <th className="border border-slate-300 px-2 py-2">OBJETO</th>
-              <th className="border border-slate-300 px-2 py-2">OBJETO DESCRIPCION</th>
-              <th className="border border-slate-300 px-2 py-2">ITEM</th>
-              <th className="border border-slate-300 px-2 py-2 text-right">CANTIDAD</th>
-              <th className="border border-slate-300 px-2 py-2 text-right">
-                PRECIO UNITARIO
-              </th>
-              <th className="border border-slate-300 px-2 py-2 text-right">MONTO</th>
-            </tr>
-          </thead>
-          <tbody>
-            {detalles.length === 0 ? (
-              <tr>
-                <td className="border border-slate-300 px-2 py-6 text-center" colSpan={7}>
-                  No hay items registrados.
-                </td>
+        <section className="print-section print-view-detallada">
+          <h2 className="mb-3 text-lg font-semibold print:mb-2 print:text-base">
+            Vista detallada
+          </h2>
+          <table className="w-full border-collapse text-[10px]">
+            <thead>
+              <tr className="bg-slate-100 text-left">
+                <th className="border border-slate-300 px-1 py-0">NRO</th>
+                <th className="border border-slate-300 px-1 py-1">OBJETO</th>
+                <th className="border border-slate-300 px-1 py-1">OBJETO DESCRIPCION</th>
+                <th className="border border-slate-300 px-1 py-1">ITEM</th>
+                <th className="border border-slate-300 px-1 py-1 text-right">CANTIDAD</th>
+                <th className="border border-slate-300 px-1 py-1 text-right">
+                  PRECIO UNITARIO
+                </th>
+                <th className="border border-slate-300 px-1 py-1 text-right">MONTO</th>
               </tr>
-            ) : (
-              detalles.map((detalle, index) => (
-                <tr key={detalle.id} className="break-inside-avoid">
-                  <td className="border border-slate-300 px-2 py-2">{index + 1}</td>
-                  <td className="border border-slate-300 px-2 py-2">
-                    {detalle.item.objetoCodigo}
-                  </td>
-                  <td className="border border-slate-300 px-2 py-2">
-                    {detalle.item.objeto.descripcion}
-                  </td>
-                  <td className="border border-slate-300 px-2 py-2">
-                    <span className="font-semibold">{detalle.itemCodigo}</span>
-                    <span> - {detalle.item.nombre}</span>
-                  </td>
-                  <td className="border border-slate-300 px-2 py-2 text-right">
-                    {detalle.cantidad.toString()}
-                  </td>
-                  <td className="border border-slate-300 px-2 py-2 text-right">
-                    {formatMoney(detalle.precioUnitario)}
-                  </td>
-                  <td className="border border-slate-300 px-2 py-2 text-right font-semibold">
-                    {formatMoney(detalle.subtotal)}
+            </thead>
+            <tbody>
+              {detalles.length === 0 ? (
+                <tr>
+                  <td className="border border-slate-300 px-2 py-6 text-center" colSpan={7}>
+                    No hay items registrados.
                   </td>
                 </tr>
-              ))
-            )}
-          </tbody>
-          {detalles.length > 0 ? (
-            <tfoot>
-              <tr className="bg-slate-100">
-                <td className="border border-slate-300 px-2 py-2 text-right font-bold" colSpan={6}>
-                  TOTAL
-                </td>
-                <td className="border border-slate-300 px-2 py-2 text-right font-bold">
-                  {formatMoney(total)}
-                </td>
+              ) : (
+                detalles.map((detalle, index) => (
+                  <tr key={detalle.id} className="break-inside-avoid">
+                    <td className="border border-slate-300 px-2 py-0">{index + 1}</td>
+                    <td className="border border-slate-300 px-2 py-0">
+                      {detalle.item.objetoCodigo}
+                    </td>
+                    <td className="border border-slate-300 px-2 py-0">
+                      {detalle.item.objeto.descripcion}
+                    </td>
+                    <td className="border border-slate-300 px-2 py-0">
+                      <span className="font-semibold">{detalle.itemCodigo}</span>
+                      <span> - {detalle.item.nombre}</span>
+                    </td>
+                    <td className="border border-slate-300 px-2 py-0 text-right">
+                      {detalle.cantidad.toString()}
+                    </td>
+                    <td className="border border-slate-300 px-2 py-0 text-right">
+                      {formatMoney(detalle.precioUnitario)}
+                    </td>
+                    <td className="border border-slate-300 px-2 py-0 text-right font-semibold">
+                      {formatMoney(detalle.subtotal)}
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+            {detalles.length > 0 ? (
+              <tfoot>
+                <tr className="bg-slate-100">
+                  <td
+                    className="border border-slate-300 px-2 py-2 text-right font-bold"
+                    colSpan={6}
+                  >
+                    TOTAL
+                  </td>
+                  <td className="border border-slate-300 px-2 py-2 text-right font-bold">
+                    {formatMoney(total)}
+                  </td>
+                </tr>
+              </tfoot>
+            ) : null}
+          </table>
+        </section>
+
+        <section className="print-section print-view-agrupada mt-8 print:mt-0">
+          <h2 className="mb-3 text-lg font-semibold print:mb-2 print:text-base">
+            Vista agrupada por objeto
+          </h2>
+          <table className="w-full border-collapse text-[11px]">
+            <thead>
+              <tr className="bg-slate-100 text-left">
+                <th className="border border-slate-300 px-2 py-2">OBJETO</th>
+                <th className="border border-slate-300 px-2 py-2">DESCRIPCION</th>
+                <th className="border border-slate-300 px-2 py-2 text-right">MONTO TOTAL</th>
               </tr>
-            </tfoot>
-          ) : null}
-        </table>
+            </thead>
+            <tbody>
+              {agrupadosPorObjeto.length === 0 ? (
+                <tr>
+                  <td className="border border-slate-300 px-2 py-6 text-center" colSpan={3}>
+                    No hay items registrados.
+                  </td>
+                </tr>
+              ) : (
+                agrupadosPorObjeto.map((grupo) => (
+                  <tr key={grupo.objetoCodigo} className="break-inside-avoid">
+                    <td className="border border-slate-300 px-2 py-2 font-semibold">
+                      {grupo.objetoCodigo}
+                    </td>
+                    <td className="border border-slate-300 px-2 py-2">
+                      {grupo.objetoDescripcion}
+                    </td>
+                    <td className="border border-slate-300 px-2 py-2 text-right font-semibold">
+                      {formatMoney(grupo.total)}
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+            {agrupadosPorObjeto.length > 0 ? (
+              <tfoot>
+                <tr className="bg-slate-100">
+                  <td
+                    className="border border-slate-300 px-2 py-2 text-right font-bold"
+                    colSpan={2}
+                  >
+                    TOTAL
+                  </td>
+                  <td className="border border-slate-300 px-2 py-2 text-right font-bold">
+                    {formatMoney(total)}
+                  </td>
+                </tr>
+              </tfoot>
+            ) : null}
+          </table>
+        </section>
       </div>
     </main>
   );

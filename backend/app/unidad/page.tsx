@@ -283,7 +283,7 @@ export default async function UnidadPage({ searchParams }: UnidadPageProps) {
                   min="0.01"
                   step="0.01"
                   className="h-11 rounded-md border border-slate-300 px-3 font-normal outline-none focus:border-slate-900"
-                  placeholder="12.00"
+                  placeholder="Ej: 12.00"
                   disabled={!selectedItem}
                 />
               </label>
@@ -296,7 +296,7 @@ export default async function UnidadPage({ searchParams }: UnidadPageProps) {
                   min="0.01"
                   step="0.01"
                   className="h-11 rounded-md border border-slate-300 px-3 font-normal outline-none focus:border-slate-900"
-                  placeholder="30.00"
+                  placeholder="Ej: 30.00"
                   disabled={!selectedItem}
                 />
               </label>

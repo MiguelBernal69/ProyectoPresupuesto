@@ -68,6 +68,18 @@ export default function ItemsSelector({
   };
 
   const seleccionadosCount = seleccionados.size;
+  const itemsPorCodigo = useMemo(
+    () => new Map(items.map((item) => [item.codigo, item])),
+    [items],
+  );
+  const itemsSeleccionados = useMemo(
+    () =>
+      Array.from(seleccionados)
+        .map((codigo) => itemsPorCodigo.get(codigo))
+        .filter((item): item is Item => Boolean(item))
+        .sort((a, b) => a.codigo.localeCompare(b.codigo)),
+    [itemsPorCodigo, seleccionados],
+  );
 
   return (
     <form action="/api/admin/items-obligatorios" method="post" className="mt-5 flex flex-col gap-4">
@@ -78,6 +90,41 @@ export default function ItemsSelector({
       {Array.from(seleccionados).map((codigo) => (
         <input key={codigo} type="hidden" name="itemCodigo" value={codigo} />
       ))}
+
+      <div className="rounded-md border border-emerald-200 bg-emerald-50 p-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 className="text-sm font-semibold text-emerald-950">
+              Items marcados como obligatorios
+            </h2>
+            <p className="mt-1 text-sm text-emerald-700">
+              {seleccionadosCount === 0
+                ? "Esta unidad todavia no tiene items obligatorios marcados."
+                : `${seleccionadosCount} item${seleccionadosCount !== 1 ? "s" : ""} obligatorio${
+                    seleccionadosCount !== 1 ? "s" : ""
+                  } para esta unidad.`}
+            </p>
+          </div>
+        </div>
+
+        {itemsSeleccionados.length > 0 && (
+          <div className="mt-3 flex max-h-36 flex-col gap-2 overflow-y-auto pr-1">
+            {itemsSeleccionados.map((item) => (
+              <div
+                key={item.codigo}
+                className="rounded-md border border-emerald-200 bg-white px-3 py-2 text-sm"
+              >
+                <span className="font-medium text-slate-950">
+                  {item.codigo} - {item.nombre}
+                </span>
+                <span className="mt-1 block text-xs text-slate-500">
+                  {item.objetoCodigo} - {item.objeto.descripcion}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
 
       {/* Barra de búsqueda + contador */}
       <div className="flex items-center gap-3">
@@ -125,7 +172,7 @@ export default function ItemsSelector({
       </div>
 
       {/* Lista de ítems */}
-      <div className="flex max-h-[60vh] flex-col gap-2 overflow-y-auto pr-1">
+      <div className="flex max-h-[60vh] flex-col gap-2 overflow-y-auto pb-24 pr-1">
         {itemsPagina.length === 0 ? (
           <p className="py-6 text-center text-sm text-slate-400">
             No se encontraron ítems con esa búsqueda.
@@ -163,13 +210,14 @@ export default function ItemsSelector({
       </div>
 
       {/* Controles de paginación */}
+      <div className="sticky bottom-0 z-20 -mx-5 border-t border-slate-200 bg-white/95 px-5 py-3 shadow-[0_-8px_20px_rgba(15,23,42,0.08)] backdrop-blur">
       {totalPaginas > 1 && (
-        <div className="flex items-center justify-center gap-2">
+        <div className="mb-3 flex items-center justify-center gap-2 overflow-x-auto pb-1">
           <button
             type="button"
             onClick={() => setPagina((p) => Math.max(1, p - 1))}
             disabled={paginaActual === 1}
-            className="h-8 rounded-md border border-slate-300 px-3 text-sm font-medium hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+            className="h-8 shrink-0 rounded-md border border-slate-300 px-3 text-sm font-medium hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
           >
             ← Anterior
           </button>
@@ -199,7 +247,7 @@ export default function ItemsSelector({
                   key={n}
                   type="button"
                   onClick={() => setPagina(n as number)}
-                  className={`h-8 min-w-[2rem] rounded-md border px-2 text-sm font-medium ${
+                  className={`h-8 min-w-[2rem] shrink-0 rounded-md border px-2 text-sm font-medium ${
                     paginaActual === n
                       ? "border-slate-950 bg-slate-950 text-white"
                       : "border-slate-300 hover:bg-slate-50"
@@ -214,7 +262,7 @@ export default function ItemsSelector({
             type="button"
             onClick={() => setPagina((p) => Math.min(totalPaginas, p + 1))}
             disabled={paginaActual === totalPaginas}
-            className="h-8 rounded-md border border-slate-300 px-3 text-sm font-medium hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+            className="h-8 shrink-0 rounded-md border border-slate-300 px-3 text-sm font-medium hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
           >
             Siguiente →
           </button>
@@ -223,10 +271,11 @@ export default function ItemsSelector({
 
       <button
         type="submit"
-        className="mt-1 h-11 rounded-md bg-slate-950 px-4 text-sm font-semibold text-white hover:bg-slate-800"
+        className="h-11 w-full rounded-md bg-slate-950 px-4 text-sm font-semibold text-white hover:bg-slate-800"
       >
         Guardar ítems obligatorios
       </button>
+      </div>
     </form>
   );
 }
