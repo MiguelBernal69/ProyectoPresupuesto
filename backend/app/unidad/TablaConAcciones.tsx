@@ -150,6 +150,7 @@ export default function TablaConAcciones({ detalles }: { detalles: DetalleRow[] 
           <table className="w-full min-w-[600px] border-collapse text-sm">
             <thead className="bg-slate-50 text-left text-slate-500">
               <tr>
+                <th className="px-3 py-2 font-medium w-10 text-center">NRO</th>
                 <th className="px-3 py-2 font-medium">OBJETO</th>
                 <th className="px-3 py-2 font-medium">DESCRIPCIÓN</th>
                 <th className="px-3 py-2 text-right font-medium">MONTO TOTAL</th>
@@ -158,13 +159,14 @@ export default function TablaConAcciones({ detalles }: { detalles: DetalleRow[] 
             <tbody>
               {groupedData.length === 0 ? (
                 <tr>
-                  <td className="px-3 py-8 text-center text-slate-400" colSpan={3}>
+                  <td className="px-3 py-8 text-center text-slate-400" colSpan={4}>
                     Todavía no hay ítems en tu lista.
                   </td>
                 </tr>
               ) : (
-                groupedData.map((g) => (
+                groupedData.map((g, index) => (
                   <tr className="border-t border-slate-200 hover:bg-slate-50" key={g.objetoCodigo}>
+                    <td className="px-3 py-3 text-center text-slate-500">{index + 1}</td>
                     <td className="px-3 py-3 font-medium">{g.objetoCodigo}</td>
                     <td className="px-3 py-3">{g.objetoDescripcion}</td>
                     <td className="px-3 py-3 text-right font-medium">{formatMoney(g.total.toString())}</td>
@@ -175,7 +177,7 @@ export default function TablaConAcciones({ detalles }: { detalles: DetalleRow[] 
             {groupedData.length > 0 && (
               <tfoot className="bg-slate-50">
                 <tr className="border-t border-slate-200">
-                  <td colSpan={2} className="px-3 py-3 text-right font-medium text-slate-500">TOTAL PRESUPUESTO</td>
+                  <td colSpan={3} className="px-3 py-3 text-right font-medium text-slate-500">TOTAL PRESUPUESTO</td>
                   <td className="px-3 py-3 text-right font-semibold text-slate-900">
                     {formatMoney(groupedData.reduce((acc, g) => acc + g.total, 0).toString())}
                   </td>

@@ -79,8 +79,13 @@ export default async function ReportePresupuestoPage() {
               display: none !important;
             }
 
-            .print-section + .print-section {
+            html:not([data-print-view]) .print-section + .print-section {
               break-before: page;
+            }
+
+            .total-final {
+              break-inside: avoid;
+              break-before: avoid;
             }
           }
         `}
@@ -171,8 +176,10 @@ export default async function ReportePresupuestoPage() {
                 ))
               )}
             </tbody>
-            {detalles.length > 0 ? (
-              <tfoot>
+          </table>
+          {detalles.length > 0 ? (
+            <table className="total-final w-full border-collapse text-[10px]">
+              <tbody>
                 <tr className="bg-slate-100">
                   <td
                     className="border border-slate-300 px-2 py-2 text-right font-bold"
@@ -184,9 +191,9 @@ export default async function ReportePresupuestoPage() {
                     {formatMoney(total)}
                   </td>
                 </tr>
-              </tfoot>
-            ) : null}
-          </table>
+              </tbody>
+            </table>
+          ) : null}
         </section>
 
         <section className="print-section print-view-agrupada mt-8 print:mt-0">
@@ -196,6 +203,7 @@ export default async function ReportePresupuestoPage() {
           <table className="w-full border-collapse text-[11px]">
             <thead>
               <tr className="bg-slate-100 text-left">
+                <th className="border border-slate-300 px-2 py-2 text-center w-8">NRO</th>
                 <th className="border border-slate-300 px-2 py-2">OBJETO</th>
                 <th className="border border-slate-300 px-2 py-2">DESCRIPCION</th>
                 <th className="border border-slate-300 px-2 py-2 text-right">MONTO TOTAL</th>
@@ -204,42 +212,47 @@ export default async function ReportePresupuestoPage() {
             <tbody>
               {agrupadosPorObjeto.length === 0 ? (
                 <tr>
-                  <td className="border border-slate-300 px-2 py-6 text-center" colSpan={3}>
+                  <td className="border border-slate-300 px-2 py-6 text-center" colSpan={4}>
                     No hay items registrados.
                   </td>
                 </tr>
               ) : (
-                agrupadosPorObjeto.map((grupo) => (
+                agrupadosPorObjeto.map((grupo, index) => (
                   <tr key={grupo.objetoCodigo} className="break-inside-avoid">
-                    <td className="border border-slate-300 px-2 py-2 font-semibold">
+                    <td className="border border-slate-300 px-1 py-1 text-center">
+                      {index + 1}
+                    </td>
+                    <td className="border border-slate-300 px-1 py-1 font-semibold">
                       {grupo.objetoCodigo}
                     </td>
-                    <td className="border border-slate-300 px-2 py-2">
+                    <td className="border border-slate-300 px-1 py-1">
                       {grupo.objetoDescripcion}
                     </td>
-                    <td className="border border-slate-300 px-2 py-2 text-right font-semibold">
+                    <td className="border border-slate-300 px-1 py-1 text-right font-semibold">
                       {formatMoney(grupo.total)}
                     </td>
                   </tr>
                 ))
               )}
             </tbody>
-            {agrupadosPorObjeto.length > 0 ? (
-              <tfoot>
+          </table>
+          {agrupadosPorObjeto.length > 0 ? (
+            <table className="total-final w-full border-collapse text-[11px]">
+              <tbody>
                 <tr className="bg-slate-100">
                   <td
-                    className="border border-slate-300 px-2 py-2 text-right font-bold"
-                    colSpan={2}
+                    className="border border-slate-300 px-1 py-1 text-right font-bold"
+                    colSpan={3}
                   >
                     TOTAL
                   </td>
-                  <td className="border border-slate-300 px-2 py-2 text-right font-bold">
+                  <td className="border border-slate-300 px-1 py-1 text-right font-bold">
                     {formatMoney(total)}
                   </td>
                 </tr>
-              </tfoot>
-            ) : null}
-          </table>
+              </tbody>
+            </table>
+          ) : null}
         </section>
       </div>
     </main>
