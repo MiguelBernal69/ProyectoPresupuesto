@@ -113,15 +113,12 @@ export default async function ReportePresupuestoPage() {
 
         <header className="mb-6 border-b border-slate-300 pb-4">
           <p className="text-sm font-medium uppercase tracking-wide text-slate-500">
-            Presupuesto por items
+            PRESUPUESTO 2027 
           </p>
-          <h1 className="mt-1 text-2xl font-bold">{unidad.nombre} </h1>
-          <div className="mt-3 flex flex-wrap gap-x-8 gap-y-2 text-sm">
-            <p><span className="font-semibold text-slate-600 uppercase">Gestión:</span> {String(gestionActiva.anio)}</p>
-            <p><span className="font-semibold text-slate-600 uppercase">Tope:</span> {formatMoney(resumen.montoTope)}</p>
-            <p><span className="font-semibold text-slate-600 uppercase">Utilizado:</span> {formatMoney(resumen.utilizado)}</p>
-            <p><span className="font-semibold text-slate-600 uppercase">Disponible:</span> {formatMoney(resumen.disponible)}</p>
-          </div>
+          <h3 className="mt-1 text-lg font-bold">Dirección Administrativa: 8 FACULTAD DE MEDICINA </h3>
+          <h3 className="mt-1 text-lg font-semibold">Actividad: {unidad.nombre}</h3>
+          <h3 className="mt-1 text-lg font-semibold">Techo: {formatMoney(resumen.montoTope)}</h3>
+          
         </header>
 
         <section className="print-section print-view-detallada">
