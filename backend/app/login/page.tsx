@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { getHomePathByRole, getSession } from "@/lib/auth/session";
-import { loginAction } from "./actions";
+import LoginForm from "./LoginForm";
 
 export const dynamic = "force-dynamic";
 
@@ -38,35 +38,12 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
           </div>
         ) : null}
 
-        <form action={loginAction} className="grid gap-4">
-          <label className="grid gap-1 text-sm font-medium">
-            Usuario
-            <input
-              name="username"
-              className="h-11 rounded-md border border-slate-300 px-3 font-normal outline-none focus:border-slate-900"
-              autoComplete="username"
-            />
-          </label>
+        <LoginForm />
 
-          <label className="grid gap-1 text-sm font-medium">
-            Contrasena
-            <input
-              name="password"
-              type="password"
-              className="h-11 rounded-md border border-slate-300 px-3 font-normal outline-none focus:border-slate-900"
-              autoComplete="current-password"
-            />
-          </label>
-
-          <button className="mt-2 h-11 rounded-md bg-slate-950 px-4 text-sm font-semibold text-white hover:bg-slate-800">
-            Entrar
-          </button>
-        </form>
-
-        <div className="mt-6 rounded-md bg-slate-50 p-3 text-sm text-slate-600">
+        {/* <div className="mt-6 rounded-md bg-slate-50 p-3 text-sm text-slate-600">
           <p>Admin: admin / admin123</p>
           <p>Unidad: unidad.admin / unidad123</p>
-        </div>
+        </div> */}
       </section>
     </main>
   );

@@ -119,3 +119,86 @@ export async function actualizarTopeUnidad(input: {
     },
   });
 }
+
+export type EditarUnidadInput = {
+  unidadId: number;
+  nombre: string;
+  username: string;
+  password?: string;
+  nombreUsuario: string;
+};
+
+export async function editarUnidadYUsuario(input: EditarUnidadInput) {
+  const nombre = input.nombre.trim();
+  const username = input.username.trim();
+  const nombreUsuario = input.nombreUsuario.trim();
+
+  if (!nombre || !username || !nombreUsuario || !input.unidadId) {
+    throw new Error("Completa todos los campos obligatorios.");
+  }
+
+  if (input.password && input.password.length < 6) {
+    throw new Error("La contraseña debe tener al menos 6 caracteres.");
+  }
+
+  const unidad = await prisma.unidad.findUnique({
+    where: { id: input.unidadId },
+    include: { usuarios: true },
+  });
+
+  if (!unidad || !unidad.usuarios[0]) {
+    throw new Error("No se encontró la unidad o su usuario.");
+  }
+
+  const userId = unidad.usuarios[0].id;
+  const userUpdateData: any = {
+    username,
+    nombreCompleto: nombreUsuario,
+  };
+
+  if (input.password) {
+    userUpdateData.passwordHash = await hashPassword(input.password);
+  }
+
+  try {
+    return await prisma.$transaction([
+      prisma.unidad.update({
+        where: { id: input.unidadId },
+        data: { nombre },
+      }),
+      prisma.user.update({
+        where: { id: userId },
+        data: userUpdateData,
+      }),
+    ]);
+  } catch (error) {
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === "P2002"
+    ) {
+      throw new Error("Ya existe una unidad o usuario con esos datos.");
+    }
+
+    throw error;
+  }
+}
+
+export async function toggleActivaUnidad(unidadId: number) {
+  if (!unidadId) {
+    throw new Error("Unidad inválida.");
+  }
+
+  const unidad = await prisma.unidad.findUnique({
+    where: { id: unidadId },
+    select: { activa: true },
+  });
+
+  if (!unidad) {
+    throw new Error("No se encontró la unidad.");
+  }
+
+  return prisma.unidad.update({
+    where: { id: unidadId },
+    data: { activa: !unidad.activa },
+  });
+}

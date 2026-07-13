@@ -51,9 +51,9 @@ export default async function UnidadPage({ searchParams }: UnidadPageProps) {
     buscarItemsCatalogo(query, 12),
     selectedItemCode
       ? prisma.item.findUnique({
-          where: { codigo: selectedItemCode },
-          include: { objeto: true },
-        })
+        where: { codigo: selectedItemCode },
+        include: { objeto: true },
+      })
       : null,
     prisma.itemObligatorio.findMany({
       where: { gestionId: gestionActiva.id, unidadId: user.unidadId },
@@ -86,7 +86,7 @@ export default async function UnidadPage({ searchParams }: UnidadPageProps) {
             <p className="text-sm font-medium text-slate-500">{user.nombreCompleto}</p>
             <h1 className="text-xl font-semibold">{unidad.nombre}</h1>
           </div>
-          
+
           <div className="hidden flex-1 items-center justify-center gap-4 lg:flex">
             <div className="flex gap-4 rounded-lg border border-slate-200 bg-slate-50/50 p-1.5">
               <div className="px-3 py-1">
@@ -95,7 +95,7 @@ export default async function UnidadPage({ searchParams }: UnidadPageProps) {
               </div>
               <div className="w-px bg-slate-200"></div>
               <div className="px-3 py-1">
-                <p className="text-xs font-medium text-slate-500">Utilizado</p>
+                <p className="text-xs font-medium text-slate-500">Utilizados</p>
                 <p className="text-sm font-semibold">{formatMoney(resumen.utilizado)}</p>
               </div>
               <div className="w-px bg-slate-200"></div>
@@ -128,11 +128,10 @@ export default async function UnidadPage({ searchParams }: UnidadPageProps) {
         {/* Bloque de ítems obligatorios */}
         {itemsObligatorios.length > 0 && (
           <details
-            className={`group rounded-lg border p-5 ${
-              obligatoriosPendientes.length === 0
-                ? "border-emerald-200 bg-emerald-50"
-                : "border-amber-200 bg-amber-50"
-            }`}
+            className={`group rounded-lg border p-5 ${obligatoriosPendientes.length === 0
+              ? "border-emerald-200 bg-emerald-50"
+              : "border-amber-200 bg-amber-50"
+              }`}
             open={obligatoriosPendientes.length > 0}
           >
             <summary className="flex cursor-pointer list-none items-start gap-3 outline-none [&::-webkit-details-marker]:hidden">
@@ -141,9 +140,8 @@ export default async function UnidadPage({ searchParams }: UnidadPageProps) {
               </span>
               <div className="flex-1">
                 <h2
-                  className={`text-sm font-semibold ${
-                    obligatoriosPendientes.length === 0 ? "text-emerald-800" : "text-amber-800"
-                  }`}
+                  className={`text-sm font-semibold ${obligatoriosPendientes.length === 0 ? "text-emerald-800" : "text-amber-800"
+                    }`}
                 >
                   Ítems obligatorios — Gestión {gestionActiva.anio}
                 </h2>
@@ -160,11 +158,11 @@ export default async function UnidadPage({ searchParams }: UnidadPageProps) {
               </div>
               <div className="mt-0.5 text-slate-400 transition-transform group-open:rotate-180">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5">
-                  <path d="m6 9 6 6 6-6"/>
+                  <path d="m6 9 6 6 6-6" />
                 </svg>
               </div>
             </summary>
-            
+
             <div className="mt-4 border-t border-black/5 pt-4">
               <ul className="grid gap-2 sm:grid-cols-2">
                 {itemsObligatorios.map((o) => {
@@ -172,11 +170,10 @@ export default async function UnidadPage({ searchParams }: UnidadPageProps) {
                   return (
                     <li
                       key={o.itemCodigo}
-                      className={`flex items-start gap-2 rounded-md border px-3 py-2 text-xs ${
-                        completado
-                          ? "border-emerald-200 bg-emerald-50 text-emerald-800"
-                          : "border-amber-200 bg-white text-amber-900"
-                      }`}
+                      className={`flex items-start gap-2 rounded-md border px-3 py-2 text-xs ${completado
+                        ? "border-emerald-200 bg-emerald-50 text-emerald-800"
+                        : "border-amber-200 bg-white text-amber-900"
+                        }`}
                     >
                       <span className="mt-0.5 shrink-0">{completado ? "✅" : "🔲"}</span>
                       <span>
@@ -231,11 +228,10 @@ export default async function UnidadPage({ searchParams }: UnidadPageProps) {
               {resultados.map((item) => (
                 <a
                   key={item.codigo}
-                  className={`rounded-md border px-3 py-3 text-sm hover:bg-slate-50 ${
-                    item.codigo === selectedItemCode
-                      ? "border-slate-950 bg-slate-50"
-                      : "border-slate-200"
-                  }`}
+                  className={`rounded-md border px-3 py-3 text-sm hover:bg-slate-50 ${item.codigo === selectedItemCode
+                    ? "border-slate-950 bg-slate-50"
+                    : "border-slate-200"
+                    }`}
                   href={`/unidad?q=${encodeURIComponent(query)}&item=${encodeURIComponent(item.codigo)}`}
                 >
                   <p className="font-medium">

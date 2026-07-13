@@ -111,16 +111,16 @@ export default async function ReportePresupuestoPage() {
           </div>
         </div>
 
-        <header className="mb-5 border-b border-slate-300 pb-4">
+        <header className="mb-6 border-b border-slate-300 pb-4">
           <p className="text-sm font-medium uppercase tracking-wide text-slate-500">
             Presupuesto por items
           </p>
-          <h1 className="mt-1 text-2xl font-bold">{unidad.nombre}</h1>
-          <div className="mt-1 grid grid-cols-4 gap-3 text-sm">
-            <Summary label="Gestion" value={String(gestionActiva.anio)} />
-            <Summary label="Tope" value={formatMoney(resumen.montoTope)} />
-            <Summary label="Utilizado" value={formatMoney(resumen.utilizado)} />
-            <Summary label="Disponible" value={formatMoney(resumen.disponible)} />
+          <h1 className="mt-1 text-2xl font-bold">{unidad.nombre} </h1>
+          <div className="mt-3 flex flex-wrap gap-x-8 gap-y-2 text-sm">
+            <p><span className="font-semibold text-slate-600 uppercase">Gestión:</span> {String(gestionActiva.anio)}</p>
+            <p><span className="font-semibold text-slate-600 uppercase">Tope:</span> {formatMoney(resumen.montoTope)}</p>
+            <p><span className="font-semibold text-slate-600 uppercase">Utilizado:</span> {formatMoney(resumen.utilizado)}</p>
+            <p><span className="font-semibold text-slate-600 uppercase">Disponible:</span> {formatMoney(resumen.disponible)}</p>
           </div>
         </header>
 
@@ -259,14 +259,6 @@ export default async function ReportePresupuestoPage() {
   );
 }
 
-function Summary({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-md border border-slate-300 px-3 py-2">
-      <p className="text-xs font-medium text-slate-500">{label}</p>
-      <p className="mt-1 font-semibold">{value}</p>
-    </div>
-  );
-}
 
 function formatMoney(value: { toString(): string } | number) {
   return new Intl.NumberFormat("es-BO", {

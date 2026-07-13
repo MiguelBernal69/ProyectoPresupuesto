@@ -3,7 +3,8 @@ import { Prisma } from "@prisma/client";
 import prisma from "@/lib/db";
 import { requireRole } from "@/lib/auth/session";
 import { logoutAction } from "@/app/login/actions";
-import { actualizarTopeAction, crearUnidadAction } from "./actions";
+import { crearUnidadAction } from "./actions";
+import ListaUnidades from "./ListaUnidades";
 
 export const dynamic = "force-dynamic";
 
@@ -224,67 +225,28 @@ export default async function AdminUnidadesPage({
             </div>
           </div>
 
-          <div className="mt-4 grid gap-3">
-            {unidades.map((unidad) => {
+          <ListaUnidades
+            gestionActivaId={gestionActiva?.id ?? null}
+            unidades={unidades.map((unidad) => {
               const tope = unidad.topes[0]?.montoTope ?? new Prisma.Decimal(0);
               const utilizado = unidad.detallesPresupuesto.reduce(
                 (total, detalle) => total.plus(detalle.subtotal),
-                new Prisma.Decimal(0),
+                new Prisma.Decimal(0)
               );
               const disponible = tope.minus(utilizado);
 
-              return (
-                <article
-                  className="rounded-md border border-slate-200 px-4 py-4"
-                  key={unidad.id}
-                >
-                  <div className="grid gap-4 lg:grid-cols-[1fr_150px_150px_150px_230px] lg:items-end">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <h3 className="font-medium">{unidad.nombre}</h3>
-                        <span className="rounded-md bg-slate-100 px-2 py-1 text-xs font-medium text-slate-600">
-                          {unidad.activa ? "Activa" : "Inactiva"}
-                        </span>
-                      </div>
-                      <p className="mt-1 text-sm text-slate-500">
-                        {unidad.usuarios[0]?.nombreCompleto ?? "Sin responsable"}
-                      </p>
-                      <p className="mt-1 text-sm text-slate-500">
-                        Usuario: {unidad.usuarios[0]?.username ?? "-"}
-                      </p>
-                    </div>
-
-                    <BudgetValue label="Tope" value={formatMoney(tope)} />
-                    <BudgetValue label="Utilizado" value={formatMoney(utilizado)} />
-                    <BudgetValue label="Disponible" value={formatMoney(disponible)} />
-
-                    <form action={actualizarTopeAction} className="grid gap-2">
-                      <input name="unidadId" type="hidden" value={unidad.id} />
-                      <input
-                        name="gestionId"
-                        type="hidden"
-                        value={gestionActiva?.id ?? ""}
-                      />
-                      <label className="grid gap-1 text-sm font-medium">
-                        Modificar tope
-                        <input
-                          name="montoTope"
-                          type="number"
-                          min="0.01"
-                          step="0.01"
-                          defaultValue={tope.toString()}
-                          className="h-10 rounded-md border border-slate-300 px-3 font-normal outline-none focus:border-slate-900"
-                        />
-                      </label>
-                      <button className="h-10 rounded-md border border-slate-300 px-3 text-sm font-medium hover:bg-slate-50">
-                        Guardar
-                      </button>
-                    </form>
-                  </div>
-                </article>
-              );
+              return {
+                id: unidad.id,
+                nombre: unidad.nombre,
+                activa: unidad.activa,
+                username: unidad.usuarios[0]?.username ?? "",
+                nombreUsuario: unidad.usuarios[0]?.nombreCompleto ?? "",
+                tope: tope.toString(),
+                utilizado: utilizado.toString(),
+                disponible: disponible.toString(),
+              };
             })}
-          </div>
+          />
         </section>
       </section>
     </main>
