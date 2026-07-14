@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useTransition } from "react";
+import { buscarItemsAction } from "./actions";
 
 type Item = {
   codigo: string;
@@ -10,7 +11,7 @@ type Item = {
 };
 
 type Props = {
-  items: Item[];
+  initialSelectedItems: Item[];
   obligatorioCodigos: string[];
   gestionId: number | undefined;
   unidadId: number | undefined;
@@ -19,41 +20,54 @@ type Props = {
 const PAGE_SIZE = 100;
 
 export default function ItemsSelector({
-  items,
+  initialSelectedItems,
   obligatorioCodigos,
   gestionId,
   unidadId,
 }: Props) {
   const [busqueda, setBusqueda] = useState("");
+  const [pagina, setPagina] = useState(1);
   const [seleccionados, setSeleccionados] = useState<Set<string>>(
     () => new Set(obligatorioCodigos),
   );
-  const [pagina, setPagina] = useState(1);
 
-  const itemsFiltrados = useMemo(() => {
-    const texto = busqueda.trim().toLowerCase();
-    if (!texto) return items;
-    return items.filter(
-      (item) =>
-        item.codigo.toLowerCase().includes(texto) ||
-        item.nombre.toLowerCase().includes(texto) ||
-        item.objetoCodigo.toLowerCase().includes(texto) ||
-        item.objeto.descripcion.toLowerCase().includes(texto),
-    );
-  }, [busqueda, items]);
+  // Diccionario para poder dibujar los ítems seleccionados incluso si no están en la página actual
+  const [itemsMap, setItemsMap] = useState<Map<string, Item>>(() => {
+    const map = new Map<string, Item>();
+    initialSelectedItems.forEach((i) => map.set(i.codigo, i));
+    return map;
+  });
 
-  // Resetear a página 1 cuando cambia la búsqueda
+  const [itemsPagina, setItemsPagina] = useState<Item[]>(initialSelectedItems.slice(0, PAGE_SIZE));
+  const [totalResultados, setTotalResultados] = useState(initialSelectedItems.length); // Placeholder, will update on mount
+  const [isPending, startTransition] = useTransition();
+
   const handleBusqueda = (valor: string) => {
     setBusqueda(valor);
     setPagina(1);
   };
 
-  const totalPaginas = Math.max(1, Math.ceil(itemsFiltrados.length / PAGE_SIZE));
-  const paginaActual = Math.min(pagina, totalPaginas);
-  const itemsPagina = itemsFiltrados.slice(
-    (paginaActual - 1) * PAGE_SIZE,
-    paginaActual * PAGE_SIZE,
-  );
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      startTransition(async () => {
+        try {
+          const res = await buscarItemsAction(busqueda, pagina, PAGE_SIZE);
+          setItemsPagina(res.items);
+          setTotalResultados(res.total);
+
+          setItemsMap((prev) => {
+            const next = new Map(prev);
+            res.items.forEach((i) => next.set(i.codigo, i));
+            return next;
+          });
+        } catch (error) {
+          console.error("Error al buscar ítems:", error);
+        }
+      });
+    }, 250); // Debounce para no saturar el servidor
+
+    return () => clearTimeout(timer);
+  }, [busqueda, pagina]);
 
   const toggleItem = (codigo: string) => {
     setSeleccionados((prev) => {
@@ -68,18 +82,17 @@ export default function ItemsSelector({
   };
 
   const seleccionadosCount = seleccionados.size;
-  const itemsPorCodigo = useMemo(
-    () => new Map(items.map((item) => [item.codigo, item])),
-    [items],
-  );
   const itemsSeleccionados = useMemo(
     () =>
       Array.from(seleccionados)
-        .map((codigo) => itemsPorCodigo.get(codigo))
+        .map((codigo) => itemsMap.get(codigo))
         .filter((item): item is Item => Boolean(item))
         .sort((a, b) => a.codigo.localeCompare(b.codigo)),
-    [itemsPorCodigo, seleccionados],
+    [itemsMap, seleccionados],
   );
+
+  const totalPaginas = Math.max(1, Math.ceil(totalResultados / PAGE_SIZE));
+  const paginaActual = Math.min(pagina, totalPaginas) || 1;
 
   return (
     <form action="/api/admin/items-obligatorios" method="post" className="mt-5 flex flex-col gap-4">
@@ -158,11 +171,17 @@ export default function ItemsSelector({
       {/* Info de resultados / paginación */}
       <div className="flex items-center justify-between text-xs text-slate-400">
         <span>
-          {busqueda
-            ? `${itemsFiltrados.length} resultado${itemsFiltrados.length !== 1 ? "s" : ""} · `
-            : ""}
-          Mostrando {(paginaActual - 1) * PAGE_SIZE + 1}–
-          {Math.min(paginaActual * PAGE_SIZE, itemsFiltrados.length)} de {itemsFiltrados.length}
+          {isPending ? (
+            <span className="animate-pulse text-indigo-500">Buscando...</span>
+          ) : (
+            <>
+              {busqueda
+                ? `${totalResultados} resultado${totalResultados !== 1 ? "s" : ""} · `
+                : ""}
+              Mostrando {(paginaActual - 1) * PAGE_SIZE + 1}–
+              {Math.min(paginaActual * PAGE_SIZE, totalResultados)} de {totalResultados}
+            </>
+          )}
         </span>
         {totalPaginas > 1 && (
           <span>
@@ -173,108 +192,111 @@ export default function ItemsSelector({
 
       {/* Lista de ítems */}
       <div className="flex max-h-[60vh] flex-col gap-2 overflow-y-auto pb-24 pr-1">
-        {itemsPagina.length === 0 ? (
+        {itemsPagina.length === 0 && !isPending ? (
           <p className="py-6 text-center text-sm text-slate-400">
             No se encontraron ítems con esa búsqueda.
           </p>
         ) : (
-          itemsPagina.map((item) => {
-            const marcado = seleccionados.has(item.codigo);
-            return (
-              <label
-                key={item.codigo}
-                className={`flex cursor-pointer items-start gap-3 rounded-md border px-3 py-3 transition-colors ${
-                  marcado
-                    ? "border-slate-400 bg-slate-50"
-                    : "border-slate-200 hover:border-slate-300 hover:bg-slate-50"
-                }`}
-              >
-                <input
-                  type="checkbox"
-                  checked={marcado}
-                  onChange={() => toggleItem(item.codigo)}
-                  className="mt-1 h-4 w-4 accent-slate-900"
-                />
-                <span>
-                  <span className="font-medium">
-                    {item.codigo} - {item.nombre}
+          <div className={isPending ? "opacity-50 transition-opacity" : "transition-opacity"}>
+            {itemsPagina.map((item) => {
+              const marcado = seleccionados.has(item.codigo);
+              return (
+                <label
+                  key={item.codigo}
+                  className={`mb-2 flex cursor-pointer items-start gap-3 rounded-md border px-3 py-3 transition-colors ${
+                    marcado
+                      ? "border-slate-400 bg-slate-50"
+                      : "border-slate-200 hover:border-slate-300 hover:bg-slate-50"
+                  }`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={marcado}
+                    onChange={() => toggleItem(item.codigo)}
+                    className="mt-1 h-4 w-4 accent-slate-900"
+                  />
+                  <span>
+                    <span className="font-medium">
+                      {item.codigo} - {item.nombre}
+                    </span>
+                    <span className="mt-1 block text-sm text-slate-500">
+                      {item.objetoCodigo} - {item.objeto.descripcion}
+                    </span>
                   </span>
-                  <span className="mt-1 block text-sm text-slate-500">
-                    {item.objetoCodigo} - {item.objeto.descripcion}
-                  </span>
-                </span>
-              </label>
-            );
-          })
+                </label>
+              );
+            })}
+          </div>
         )}
       </div>
 
       {/* Controles de paginación */}
       <div className="sticky bottom-0 z-20 -mx-5 border-t border-slate-200 bg-white/95 px-5 py-3 shadow-[0_-8px_20px_rgba(15,23,42,0.08)] backdrop-blur">
-      {totalPaginas > 1 && (
-        <div className="mb-3 flex items-center justify-center gap-2 overflow-x-auto pb-1">
-          <button
-            type="button"
-            onClick={() => setPagina((p) => Math.max(1, p - 1))}
-            disabled={paginaActual === 1}
-            className="h-8 shrink-0 rounded-md border border-slate-300 px-3 text-sm font-medium hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
-          >
-            ← Anterior
-          </button>
+        {totalPaginas > 1 && (
+          <div className="mb-3 flex items-center justify-center gap-2 overflow-x-auto pb-1">
+            <button
+              type="button"
+              onClick={() => setPagina((p) => Math.max(1, p - 1))}
+              disabled={paginaActual === 1 || isPending}
+              className="h-8 shrink-0 rounded-md border border-slate-300 px-3 text-sm font-medium hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              ← Anterior
+            </button>
 
-          {/* Números de página (máx 7 visibles) */}
-          {Array.from({ length: totalPaginas }, (_, i) => i + 1)
-            .filter((n) => {
-              if (totalPaginas <= 7) return true;
-              return (
-                n === 1 ||
-                n === totalPaginas ||
-                (n >= paginaActual - 2 && n <= paginaActual + 2)
-              );
-            })
-            .reduce<(number | "…")[]>((acc, n, i, arr) => {
-              if (i > 0 && (arr[i - 1] as number) + 1 < n) acc.push("…");
-              acc.push(n);
-              return acc;
-            }, [])
-            .map((n, i) =>
-              n === "…" ? (
-                <span key={`ellipsis-${i}`} className="px-1 text-slate-400">
-                  …
-                </span>
-              ) : (
-                <button
-                  key={n}
-                  type="button"
-                  onClick={() => setPagina(n as number)}
-                  className={`h-8 min-w-[2rem] shrink-0 rounded-md border px-2 text-sm font-medium ${
-                    paginaActual === n
-                      ? "border-slate-950 bg-slate-950 text-white"
-                      : "border-slate-300 hover:bg-slate-50"
-                  }`}
-                >
-                  {n}
-                </button>
-              ),
-            )}
+            {/* Números de página (máx 7 visibles) */}
+            {Array.from({ length: totalPaginas }, (_, i) => i + 1)
+              .filter((n) => {
+                if (totalPaginas <= 7) return true;
+                return (
+                  n === 1 ||
+                  n === totalPaginas ||
+                  (n >= paginaActual - 2 && n <= paginaActual + 2)
+                );
+              })
+              .reduce<(number | "…")[]>((acc, n, i, arr) => {
+                if (i > 0 && (arr[i - 1] as number) + 1 < n) acc.push("…");
+                acc.push(n);
+                return acc;
+              }, [])
+              .map((n, i) =>
+                n === "…" ? (
+                  <span key={`ellipsis-${i}`} className="px-1 text-slate-400">
+                    …
+                  </span>
+                ) : (
+                  <button
+                    key={n}
+                    type="button"
+                    disabled={isPending}
+                    onClick={() => setPagina(n as number)}
+                    className={`h-8 min-w-[2rem] shrink-0 rounded-md border px-2 text-sm font-medium ${
+                      paginaActual === n
+                        ? "border-slate-950 bg-slate-950 text-white"
+                        : "border-slate-300 hover:bg-slate-50 disabled:opacity-40"
+                    }`}
+                  >
+                    {n}
+                  </button>
+                ),
+              )}
 
-          <button
-            type="button"
-            onClick={() => setPagina((p) => Math.min(totalPaginas, p + 1))}
-            disabled={paginaActual === totalPaginas}
-            className="h-8 shrink-0 rounded-md border border-slate-300 px-3 text-sm font-medium hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
-          >
-            Siguiente →
-          </button>
-        </div>
-      )}
+            <button
+              type="button"
+              onClick={() => setPagina((p) => Math.min(totalPaginas, p + 1))}
+              disabled={paginaActual === totalPaginas || isPending}
+              className="h-8 shrink-0 rounded-md border border-slate-300 px-3 text-sm font-medium hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              Siguiente →
+            </button>
+          </div>
+        )}
 
-      <button
-        type="submit"
-        className="h-11 w-full rounded-md bg-slate-950 px-4 text-sm font-semibold text-white hover:bg-slate-800"
-      >
-        Guardar ítems obligatorios
-      </button>
+        <button
+          type="submit"
+          className="h-11 w-full rounded-md bg-slate-950 px-4 text-sm font-semibold text-white hover:bg-slate-800"
+        >
+          Guardar ítems obligatorios
+        </button>
       </div>
     </form>
   );

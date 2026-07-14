@@ -33,11 +33,7 @@ export default async function ItemsObligatoriosPage({
   const unidadSeleccionada =
     unidades.find((unidad) => unidad.id === unidadIdParam) ?? unidades[0] ?? null;
 
-  const [items, obligatorios, conteosObligatorios] = await Promise.all([
-    prisma.item.findMany({
-      orderBy: [{ objetoCodigo: "asc" }, { codigo: "asc" }],
-      include: { objeto: true },
-    }),
+  const [obligatorios, conteosObligatorios] = await Promise.all([
     gestionActiva && unidadSeleccionada
       ? prisma.itemObligatorio.findMany({
           where: {
@@ -59,6 +55,15 @@ export default async function ItemsObligatoriosPage({
   const obligatorioCodigos = obligatorios.map(
     (item: { itemCodigo: string }) => item.itemCodigo,
   );
+
+  // Solo traemos la información detallada de los ítems seleccionados inicialmente
+  const itemsIniciales = obligatorioCodigos.length > 0
+    ? await prisma.item.findMany({
+        where: { codigo: { in: obligatorioCodigos } },
+        include: { objeto: true },
+        orderBy: [{ objetoCodigo: "asc" }, { codigo: "asc" }],
+      })
+    : [];
   const conteosPorUnidad = new Map(
     conteosObligatorios.map((conteo) => [conteo.unidadId, conteo._count._all]),
   );
@@ -146,7 +151,7 @@ export default async function ItemsObligatoriosPage({
 
               <ItemsSelector
                 key={`${gestionActiva.id}-${unidadSeleccionada.id}`}
-                items={items}
+                initialSelectedItems={itemsIniciales}
                 obligatorioCodigos={obligatorioCodigos}
                 gestionId={gestionActiva.id}
                 unidadId={unidadSeleccionada.id}
