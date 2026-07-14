@@ -8,6 +8,12 @@ import {
   actualizarDetallePresupuesto,
   eliminarDetallePresupuesto,
 } from "@/lib/services/presupuesto";
+import { buscarItemsCatalogo } from "@/lib/services/catalogo";
+
+export async function buscarItemsServerAction(query: string, limit: number = 12) {
+  await requireRole("UNIDAD");
+  return buscarItemsCatalogo(query, limit);
+}
 
 export async function agregarDetalleAction(formData: FormData) {
   const user = await requireRole("UNIDAD");
