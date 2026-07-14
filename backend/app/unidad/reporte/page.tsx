@@ -164,10 +164,10 @@ export default async function ReportePresupuestoPage() {
                       {detalle.cantidad.toString()}
                     </td>
                     <td className="border border-slate-300 px-2 py-0 text-right">
-                      {formatMoney(detalle.precioUnitario)}
+                      {formatDecimal(detalle.precioUnitario)}
                     </td>
                     <td className="border border-slate-300 px-2 py-0 text-right font-semibold">
-                      {formatMoney(detalle.subtotal)}
+                      {formatDecimal(detalle.subtotal)}
                     </td>
                   </tr>
                 ))
@@ -226,7 +226,7 @@ export default async function ReportePresupuestoPage() {
                       {grupo.objetoDescripcion}
                     </td>
                     <td className="border border-slate-300 px-1 py-1 text-right font-semibold">
-                      {formatMoney(grupo.total)}
+                      {formatDecimal(grupo.total)}
                     </td>
                   </tr>
                 ))
@@ -261,5 +261,12 @@ function formatMoney(value: { toString(): string } | number) {
   return new Intl.NumberFormat("es-BO", {
     style: "currency",
     currency: "BOB",
+  }).format(Number(value.toString()));
+}
+
+function formatDecimal(value: { toString(): string } | number) {
+  return new Intl.NumberFormat("es-BO", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
   }).format(Number(value.toString()));
 }
