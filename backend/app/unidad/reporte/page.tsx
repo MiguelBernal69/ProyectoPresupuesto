@@ -33,7 +33,7 @@ export default async function ReportePresupuestoPage() {
     obtenerResumenUnidad(unidad.id, gestionActiva.id),
   ]);
 
-  const total = detalles.reduce((sum, detalle) => sum + Number(detalle.subtotal), 0);
+  const total = detalles.reduce((sum: number, detalle: typeof detalles[number]) => sum + Number(detalle.subtotal), 0);
   const agrupadosPorObjeto = Array.from(
     detalles
       .reduce(
@@ -58,7 +58,7 @@ export default async function ReportePresupuestoPage() {
         >(),
       )
       .values(),
-  ).sort((a, b) => a.objetoCodigo.localeCompare(b.objetoCodigo));
+  ).sort((a: { objetoCodigo: string; objetoDescripcion: string; total: number }, b: { objetoCodigo: string; objetoDescripcion: string; total: number }) => a.objetoCodigo.localeCompare(b.objetoCodigo));
 
   return (
     <main className="min-h-screen bg-white p-3 text-slate-950 print:p-0">
@@ -168,7 +168,7 @@ export default async function ReportePresupuestoPage() {
                   </td>
                 </tr>
               ) : (
-                detalles.map((detalle, index) => (
+                detalles.map((detalle: typeof detalles[number], index: number) => (
                   <tr key={detalle.id} className="break-inside-avoid">
                     <td className="border border-slate-300 px-2 py-0">{index + 1}</td>
                     <td className="border border-slate-300 px-2 py-0">
@@ -235,7 +235,7 @@ export default async function ReportePresupuestoPage() {
                   </td>
                 </tr>
               ) : (
-                agrupadosPorObjeto.map((grupo, index) => (
+                agrupadosPorObjeto.map((grupo: { objetoCodigo: string; objetoDescripcion: string; total: number }, index: number) => (
                   <tr key={grupo.objetoCodigo} className="break-inside-avoid">
                     <td className="border border-slate-300 px-1 py-1 text-center">
                       {index + 1}
