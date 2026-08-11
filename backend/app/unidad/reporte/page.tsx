@@ -87,6 +87,16 @@ export default async function ReportePresupuestoPage() {
               break-inside: avoid;
               break-before: avoid;
             }
+
+            /* Títulos del header según vista de impresión */
+            .print-header-default { display: none; }
+            .print-header-detallada { display: none; }
+            .print-header-agrupada { display: none; }
+
+            html[data-print-view="detallada"] .print-header-detallada { display: block; }
+            html[data-print-view="agrupada"] .print-header-agrupada { display: block; }
+
+            html:not([data-print-view]) .print-header-default { display: block; }
           }
         `}
       </style>
@@ -112,17 +122,28 @@ export default async function ReportePresupuestoPage() {
         </div>
 
         <header className="mb-6 border-b border-slate-300 pb-4">
-          <p className="text-sm font-medium uppercase tracking-wide text-slate-500">
-            PRESUPUESTO 2027 
+          {/* En pantalla */}
+          <p className="text-sm font-medium uppercase tracking-wide text-slate-500 print:hidden">
+            PRESUPUESTO 2027
           </p>
-          <h3 className="mt-1 text-lg font-bold">Dirección Administrativa: 8 FACULTAD DE MEDICINA </h3>
-          <h3 className="mt-1 text-lg font-semibold">Actividad: {unidad.nombre}</h3>
-          <h3 className="mt-1 text-lg font-semibold">Techo: {formatMoney(resumen.montoTope)}</h3>
-          
+          {/* Al imprimir: según vista */}
+          <p className="print-header-default hidden text-center text-sm font-bold uppercase tracking-widest mb-1">
+            PRESUPUESTO 2027
+          </p>
+          <p className="print-header-detallada hidden text-center text-sm font-bold uppercase tracking-widest mb-1">
+            PRESUPUESTO 2027 — MEMORIA DE CÁLCULO
+          </p>
+          <p className="print-header-agrupada hidden text-center text-sm font-bold uppercase tracking-widest mb-1">
+            PRESUPUESTO 2027 — MEMORIA DE CÁLCULO / RESUMEN POR OBJETO
+          </p>
+          <h3 className="mt-1 text-sm font-bold">Dirección Administrativa: 8 FACULTAD DE MEDICINA </h3>
+          <h3 className="mt-1 text-sm font-semibold">Actividad: {unidad.nombre}</h3>
+          <h3 className="mt-1 text-sm font-semibold">Techo: {formatMoney(resumen.montoTope)}</h3>
+
         </header>
 
         <section className="print-section print-view-detallada">
-          <h2 className="mb-3 text-lg font-semibold print:mb-2 print:text-base">
+          <h2 className="mb-3 text-lg font-semibold print:hidden">
             Vista detallada
           </h2>
           <table className="w-full border-collapse text-[10px]">
@@ -194,7 +215,7 @@ export default async function ReportePresupuestoPage() {
         </section>
 
         <section className="print-section print-view-agrupada mt-8 print:mt-0">
-          <h2 className="mb-3 text-lg font-semibold print:mb-2 print:text-base">
+          <h2 className="mb-3 text-lg font-semibold print:hidden">
             Vista agrupada por objeto
           </h2>
           <table className="w-full border-collapse text-[11px]">
@@ -251,6 +272,19 @@ export default async function ReportePresupuestoPage() {
             </table>
           ) : null}
         </section>
+
+        {/* Firmas */}
+        <div className="mt-16 grid grid-cols-2 gap-16 break-inside-avoid print:mt-24">
+          <div className="flex flex-col items-center gap-2">
+            <div className="w-full border-b-2 border-slate-950"></div>
+            <p className="text-xs font-bold uppercase tracking-wide">Responsable de la Unidad</p>
+          </div>
+          <div className="flex flex-col items-center gap-2">
+            <div className="w-full border-b-2 border-slate-950"></div>
+            <p className="text-xs font-bold uppercase tracking-wide">V.B. (Visto Bueno)</p>
+          </div>
+        </div>
+
       </div>
     </main>
   );
