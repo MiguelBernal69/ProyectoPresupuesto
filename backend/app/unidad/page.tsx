@@ -131,19 +131,34 @@ export default async function UnidadPage({ searchParams }: UnidadPageProps) {
               <p className="text-sm text-slate-500">Gestión {gestionActiva.anio}</p>
             </div>
           </div>
-          <div className="mb-4 flex flex-wrap gap-2">
+          <div className="mb-4 flex flex-wrap items-center gap-2">
             <a
               className="h-10 rounded-md border border-slate-300 px-4 py-2 text-sm font-medium hover:bg-slate-50"
               href="/api/unidad/presupuesto"
             >
               Descargar CSV
             </a>
-            <a
-              className="h-10 rounded-md bg-slate-950 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800"
-              href="/unidad/reporte"
-            >
-              Imprimir
-            </a>
+            {resumen.disponible.gt(0) ? (
+              <div className="flex items-center gap-3">
+                <button
+                  disabled
+                  className="h-10 rounded-md bg-slate-300 px-4 py-2 text-sm font-medium text-slate-500 cursor-not-allowed"
+                  title="Debes utilizar todo el presupuesto disponible antes de imprimir"
+                >
+                  Imprimir
+                </button>
+                <span className="text-sm font-medium text-amber-600">
+                  ⚠️ Debes agotar tu saldo disponible para imprimir la memoria de cálculo.
+                </span>
+              </div>
+            ) : (
+              <a
+                className="h-10 rounded-md bg-slate-950 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800"
+                href="/unidad/reporte"
+              >
+                Imprimir
+              </a>
+            )}
           </div>
           <TablaConAcciones detalles={detallesSerializados} />
         </section>

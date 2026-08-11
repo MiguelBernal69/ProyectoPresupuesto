@@ -102,11 +102,11 @@ export default async function ReporteUnidadesPage() {
 
                   return (
                     <tr key={unidad.id} className="break-inside-avoid">
-                      <td className="border border-slate-300 px-3 py-2 text-center">{index + 1}</td>
-                      <td className="border border-slate-300 px-3 py-2 font-medium">{unidad.nombre}</td>
-                      <td className="border border-slate-300 px-3 py-2">{usuario?.nombreCompleto || "-"}</td>
+                      <td className="border border-slate-300 px-3 py-2 text-center text-xs">{index + 1}</td>
+                      <td className="border border-slate-300 px-3 py-2 font-medium text-xs">{unidad.nombre}</td>
+                      <td className="border border-slate-300 px-3 py-2 text-xs">{usuario?.nombreCompleto || "-"}</td>
                       <td className="border border-slate-300 px-3 py-2 font-mono text-xs">{usuario?.username || "-"}</td>
-                      <td className="border border-slate-300 px-3 py-2 text-right font-semibold">
+                      <td className="border border-slate-300 px-3 py-2 text-right font-semibold text-xs">
                         {formatMoney(tope)}
                       </td>
                     </tr>

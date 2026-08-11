@@ -33,6 +33,25 @@ export default async function ReportePresupuestoPage() {
     obtenerResumenUnidad(unidad.id, gestionActiva.id),
   ]);
 
+  if (resumen.disponible.gt(0)) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-slate-100 p-4">
+        <div className="max-w-md rounded-lg border border-red-200 bg-white p-6 text-center shadow-sm">
+          <h2 className="mb-2 text-xl font-bold text-red-600">Acción denegada</h2>
+          <p className="mb-6 text-slate-600">
+            Aún tienes saldo disponible en tu presupuesto. Debes utilizar todo el presupuesto asignado a tu unidad antes de poder imprimir la memoria de cálculo.
+          </p>
+          <a
+            href="/unidad"
+            className="inline-block rounded-md bg-slate-950 px-4 py-2 font-medium text-white hover:bg-slate-800"
+          >
+            Volver a la lista
+          </a>
+        </div>
+      </div>
+    );
+  }
+
   const total = detalles.reduce((sum: number, detalle: typeof detalles[number]) => sum + Number(detalle.subtotal), 0);
   const agrupadosPorObjeto = Array.from(
     detalles
