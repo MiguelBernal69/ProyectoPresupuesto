@@ -2,7 +2,7 @@
 
 type PrintButtonProps = {
   label: string;
-  view: "detallada" | "agrupada";
+  view: "detallada" | "agrupada" | "default";
 };
 
 export default function PrintButton({ label, view }: PrintButtonProps) {
