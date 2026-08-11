@@ -277,6 +277,7 @@ export default async function ReportePresupuestoPage() {
         <div className="mt-16 grid grid-cols-2 gap-16 break-inside-avoid print:mt-24">
           <div className="flex flex-col items-center gap-2">
             <div className="w-full border-b-2 border-slate-950"></div>
+            <p className="text-xs font-medium uppercase tracking-wide">{user.nombreCompleto}</p>
             <p className="text-xs font-bold uppercase tracking-wide">Responsable de la Unidad</p>
           </div>
           <div className="flex flex-col items-center gap-2">
