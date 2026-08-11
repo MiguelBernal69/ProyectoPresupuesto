@@ -223,6 +223,14 @@ export default async function AdminUnidadesPage({
                 {unidades.length} unidades con presupuesto de la gestion activa
               </p>
             </div>
+            {unidades.length > 0 && (
+              <Link
+                href="/admin/unidades/reporte"
+                className="rounded-md bg-slate-950 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800"
+              >
+                Imprimir Credenciales
+              </Link>
+            )}
           </div>
 
           <ListaUnidades
