@@ -86,6 +86,7 @@ export async function getSession(): Promise<SessionUser | null> {
       nombreCompleto: session.nombreCompleto,
       rol: session.rol,
       unidadId: session.unidadId,
+      departamentoId: session.departamentoId,
     };
   } catch {
     return null;
@@ -106,12 +107,14 @@ export async function requireRole(rol: RolUsuario) {
   const user = await requireUser();
 
   if (user.rol !== rol) {
-    redirect(user.rol === "ADMIN" ? "/admin" : "/unidad");
+    redirect(getHomePathByRole(user.rol));
   }
 
   return user;
 }
 
 export function getHomePathByRole(rol: RolUsuario) {
-  return rol === "ADMIN" ? "/admin" : "/unidad";
+  if (rol === "ADMIN") return "/admin";
+  if (rol === "DEPARTAMENTO") return "/departamento";
+  return "/unidad";
 }

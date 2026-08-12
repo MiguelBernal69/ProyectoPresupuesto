@@ -9,12 +9,25 @@ datasource db {
 
 enum RolUsuario {
   ADMIN
+  DEPARTAMENTO
   UNIDAD
 }
 
 enum EstadoGestion {
   ABIERTA
   CERRADA
+}
+
+model Departamento {
+  id     Int     @id @default(autoincrement())
+  nombre String  @unique
+  activa Boolean @default(true)
+
+  unidades Unidad[]
+  usuarios User[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model User {
@@ -28,6 +41,9 @@ model User {
   unidadId Int?    @unique
   unidad   Unidad? @relation(fields: [unidadId], references: [id], onDelete: SetNull)
 
+  departamentoId Int?
+  departamento   Departamento? @relation(fields: [departamentoId], references: [id], onDelete: SetNull)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -36,6 +52,9 @@ model Unidad {
   id     Int     @id @default(autoincrement())
   nombre String  @unique
   activa Boolean @default(true)
+
+  departamentoId Int?
+  departamento   Departamento? @relation(fields: [departamentoId], references: [id], onDelete: SetNull)
 
   usuarios            User[]
   topes               TopeUnidad[]

@@ -8,6 +8,7 @@ export type SessionUser = {
   nombreCompleto: string;
   rol: RolUsuario;
   unidadId: number | null;
+  departamentoId: number | null;
 };
 
 export async function validateLogin(
@@ -24,6 +25,7 @@ export async function validateLogin(
       rol: true,
       activo: true,
       unidadId: true,
+      departamentoId: true,
     },
   });
 
@@ -43,5 +45,6 @@ export async function validateLogin(
     nombreCompleto: user.nombreCompleto,
     rol: user.rol,
     unidadId: user.unidadId,
+    departamentoId: user.departamentoId,
   };
 }
