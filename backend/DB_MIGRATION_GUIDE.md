@@ -84,7 +84,33 @@ npx prisma migrate dev --name nombre_del_cambio
 npx prisma generate
 ```
 
-## 7. Verificar que todo quedó bien
+## 7. RESPALDOS (Backups): Cómo exportar e importar datos sin perder migraciones
+
+Cuando restauras una base de datos antigua que **no tiene las últimas tablas** (por ejemplo, al mover el sistema a otra computadora o retroceder un respaldo), Prisma puede confundirse. Para hacerlo correctamente, sigue este proceso:
+
+### A. Para sacar un respaldo completo (incluye el estado de migraciones)
+Ejecuta el siguiente comando en tu terminal para generar un archivo con tu información actual:
+```bash
+pg_dump -U postgres -d presupuesto_db -F c -f respaldo_completo.backup
+```
+*(Este respaldo será perfecto porque incluirá la tabla `_prisma_migrations` actualizada).*
+
+### B. Para restaurar un respaldo antiguo en una base de datos nueva
+Si creas una base de datos nueva y le restauras un respaldo antiguo (que no tenía las últimas tablas), debes actualizarla así:
+
+1. Restaura tu respaldo con `pg_restore`.
+2. Como el respaldo antiguo no conoce las migraciones nuevas, revisa cuáles faltan aplicando un **deploy** (no uses `dev` aquí):
+   ```bash
+   npx prisma migrate deploy
+   ```
+   *Esto aplicará automáticamente cualquier migración nueva que el código tenga, pero que el respaldo antiguo no tenía (como crear la tabla Departamento).*
+3. Regenera el cliente de Prisma por si acaso:
+   ```bash
+   npx prisma generate
+   ```
+4. Reinicia tu servidor (`npm run dev`).
+
+## 8. Verificar que todo quedó bien
 
 Puedes abrir Prisma Studio para revisar los datos:
 
@@ -94,6 +120,6 @@ npx prisma studio
 
 ## Notas importantes
 
-- Si recibes errores de conexión, revisa que `DATABASE_URL` sea correcta.
+- Si recibes errores de conexión, revisa que `DATABASE_URL` sea correcta y que contenga `?schema=public` (asegúrate de que no tenga errores tipográficos como "piblic").
 - Si aparece un error sobre la base de datos no existente, créala primero.
 - Si un cambio anterior quedó mal aplicado, la opción más segura suele ser `migrate reset`.
