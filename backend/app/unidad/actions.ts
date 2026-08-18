@@ -10,9 +10,9 @@ import {
 } from "@/lib/services/presupuesto";
 import { buscarItemsCatalogo } from "@/lib/services/catalogo";
 
-export async function buscarItemsServerAction(query: string, limit: number = 12) {
+export async function buscarItemsServerAction(query: string) {
   await requireRole("UNIDAD");
-  return buscarItemsCatalogo(query, limit);
+  return buscarItemsCatalogo(query);
 }
 
 export async function agregarDetalleAction(formData: FormData) {

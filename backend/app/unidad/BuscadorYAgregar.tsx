@@ -55,11 +55,10 @@ export default function BuscadorYAgregar({
       {/* Bloque de ítems obligatorios */}
       {itemsObligatorios.length > 0 && (
         <details
-          className={`group rounded-lg border p-5 ${
-            obligatoriosPendientes.length === 0
+          className={`group rounded-lg border p-5 ${obligatoriosPendientes.length === 0
               ? "border-emerald-200 bg-emerald-50"
               : "border-amber-200 bg-amber-50"
-          }`}
+            }`}
           open={obligatoriosPendientes.length > 0}
         >
           <summary className="flex cursor-pointer list-none items-start gap-3 outline-none [&::-webkit-details-marker]:hidden">
@@ -68,11 +67,10 @@ export default function BuscadorYAgregar({
             </span>
             <div className="flex-1">
               <h2
-                className={`text-sm font-semibold ${
-                  obligatoriosPendientes.length === 0
+                className={`text-sm font-semibold ${obligatoriosPendientes.length === 0
                     ? "text-emerald-800"
                     : "text-amber-800"
-                }`}
+                  }`}
               >
                 Ítems obligatorios — Gestión {gestionAnio}
               </h2>
@@ -102,11 +100,10 @@ export default function BuscadorYAgregar({
                     <button
                       type="button"
                       onClick={() => setSelectedItem(o.item)}
-                      className={`flex w-full text-left items-start gap-2 rounded-md border px-3 py-2 text-xs transition-colors ${
-                        completado
+                      className={`flex w-full text-left items-start gap-2 rounded-md border px-3 py-2 text-xs transition-colors ${completado
                           ? "border-emerald-200 bg-emerald-50 text-emerald-800 hover:bg-emerald-100"
                           : "border-amber-200 bg-white text-amber-900 hover:bg-amber-50 hover:border-amber-300"
-                      } ${selectedItem?.codigo === o.itemCodigo ? "ring-2 ring-slate-950" : ""}`}
+                        } ${selectedItem?.codigo === o.itemCodigo ? "ring-2 ring-slate-950" : ""}`}
                     >
                       <span className="mt-0.5 shrink-0">{completado ? "✅" : "🔲"}</span>
                       <span>
@@ -134,118 +131,117 @@ export default function BuscadorYAgregar({
 
       <section className="grid gap-6 lg:grid-cols-[420px_1fr]">
         {/* Panel izquierdo: Buscar */}
-      <div className="rounded-lg border border-slate-200 bg-white p-5">
-        <h2 className="text-base font-semibold">Buscar ítem</h2>
-        <p className="mt-1 text-sm text-slate-500">
-          Busca por código, descripción, objeto o nombre.
-        </p>
+        <div className="rounded-lg border border-slate-200 bg-white p-5">
+          <h2 className="text-base font-semibold">Buscar ítem</h2>
+          <p className="mt-1 text-sm text-slate-500">
+            Busca por código, descripción, objeto o nombre.
+          </p>
 
-        <div className="mt-4 flex gap-2">
-          <input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            className="h-11 min-w-0 flex-1 rounded-md border border-slate-300 px-3 text-sm outline-none focus:border-slate-900"
-            placeholder="Ej. courier, 211, comunicaciones"
-          />
+          <div className="mt-4 flex gap-2">
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              className="h-11 min-w-0 flex-1 rounded-md border border-slate-300 px-3 text-sm outline-none focus:border-slate-900"
+              placeholder="Ej. courier, 211, comunicaciones"
+            />
+          </div>
+
+          <div className="mt-4 grid gap-2">
+            {isPending ? (
+              <p className="rounded-md bg-slate-50 px-3 py-3 text-sm text-slate-500 animate-pulse">
+                Buscando...
+              </p>
+            ) : query && resultados.length === 0 ? (
+              <p className="rounded-md bg-slate-50 px-3 py-3 text-sm text-slate-500">
+                No se encontraron ítems.
+              </p>
+            ) : (
+              <div className="max-h-[350px] overflow-y-auto grid gap-2 pr-1">
+                {resultados.map((item) => (
+                  <button
+                    key={item.codigo}
+                    type="button"
+                    onClick={() => setSelectedItem(item)}
+                    className={`text-left rounded-md border px-3 py-3 text-sm hover:bg-slate-50 ${item.codigo === selectedItem?.codigo
+                        ? "border-slate-950 bg-slate-50"
+                        : "border-slate-200"
+                      }`}
+                  >
+                    <p className="mt-1 text-slate-500">
+                      {item.objetoCodigo} — {item.objeto.descripcion}
+                    </p>
+                    <p className="font-medium">
+                      {item.codigo} — {item.nombre}
+                    </p>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
 
-        <div className="mt-4 grid gap-2">
-          {isPending ? (
-            <p className="rounded-md bg-slate-50 px-3 py-3 text-sm text-slate-500 animate-pulse">
-              Buscando...
-            </p>
-          ) : query && resultados.length === 0 ? (
-            <p className="rounded-md bg-slate-50 px-3 py-3 text-sm text-slate-500">
-              No se encontraron ítems.
-            </p>
+        {/* Panel derecho: Agregar */}
+        <div className="rounded-lg border border-slate-200 bg-white p-5">
+          <h2 className="text-base font-semibold">Agregar a mi presupuesto</h2>
+          <p className="mt-1 text-sm text-slate-500">
+            Selecciona un ítem y registra cantidad y precio unitario.
+          </p>
+
+          {selectedItem ? (
+            <div className="mt-4 rounded-md bg-slate-50 p-4">
+              <p className="text-sm font-medium">
+                {selectedItem.objetoCodigo} — {selectedItem.objeto.descripcion}
+              </p>
+              <p className="mt-1 text-sm text-slate-600">
+                {selectedItem.codigo} — {selectedItem.nombre}
+              </p>
+            </div>
           ) : (
-            <div className="max-h-[350px] overflow-y-auto grid gap-2 pr-1">
-              {resultados.map((item) => (
-                <button
-                  key={item.codigo}
-                  type="button"
-                  onClick={() => setSelectedItem(item)}
-                  className={`text-left rounded-md border px-3 py-3 text-sm hover:bg-slate-50 ${
-                    item.codigo === selectedItem?.codigo
-                      ? "border-slate-950 bg-slate-50"
-                      : "border-slate-200"
-                  }`}
-                >
-                  <p className="font-medium">
-                    {item.codigo} — {item.nombre}
-                  </p>
-                  <p className="mt-1 text-slate-500">
-                    {item.objetoCodigo} — {item.objeto.descripcion}
-                  </p>
-                </button>
-              ))}
+            <div className="mt-4 rounded-md bg-slate-50 p-4 text-sm text-slate-500">
+              Elige un ítem de la lista de búsqueda para habilitar el formulario.
             </div>
           )}
+
+          <form action={agregarDetalleAction} className="mt-5 grid gap-4 sm:grid-cols-3">
+            <input name="gestionId" type="hidden" value={gestionId} />
+            <input name="itemCodigo" type="hidden" value={selectedItem?.codigo ?? ""} />
+
+            <label className="grid gap-1 text-sm font-medium">
+              Cantidad
+              <input
+                name="cantidad"
+                type="number"
+                min="0.01"
+                step="0.01"
+                className="h-11 rounded-md border border-slate-300 px-3 font-normal outline-none focus:border-slate-900"
+                placeholder="Ej: 12"
+                disabled={!selectedItem}
+                required
+              />
+            </label>
+
+            <label className="grid gap-1 text-sm font-medium">
+              Precio unitario
+              <input
+                name="precioUnitario"
+                type="number"
+                min="0.01"
+                step="0.01"
+                className="h-11 rounded-md border border-slate-300 px-3 font-normal outline-none focus:border-slate-900"
+                placeholder="Ej: 30.00"
+                disabled={!selectedItem}
+                required
+              />
+            </label>
+
+            <button
+              className="mt-6 h-11 rounded-md bg-slate-950 px-4 text-sm font-semibold text-white hover:bg-slate-800 disabled:opacity-50"
+              disabled={!selectedItem}
+            >
+              Guardar ítem
+            </button>
+          </form>
         </div>
-      </div>
-
-      {/* Panel derecho: Agregar */}
-      <div className="rounded-lg border border-slate-200 bg-white p-5">
-        <h2 className="text-base font-semibold">Agregar a mi presupuesto</h2>
-        <p className="mt-1 text-sm text-slate-500">
-          Selecciona un ítem y registra cantidad y precio unitario.
-        </p>
-
-        {selectedItem ? (
-          <div className="mt-4 rounded-md bg-slate-50 p-4">
-            <p className="text-sm font-medium">
-              {selectedItem.objetoCodigo} — {selectedItem.objeto.descripcion}
-            </p>
-            <p className="mt-1 text-sm text-slate-600">
-              {selectedItem.codigo} — {selectedItem.nombre}
-            </p>
-          </div>
-        ) : (
-          <div className="mt-4 rounded-md bg-slate-50 p-4 text-sm text-slate-500">
-            Elige un ítem de la lista de búsqueda para habilitar el formulario.
-          </div>
-        )}
-
-        <form action={agregarDetalleAction} className="mt-5 grid gap-4 sm:grid-cols-3">
-          <input name="gestionId" type="hidden" value={gestionId} />
-          <input name="itemCodigo" type="hidden" value={selectedItem?.codigo ?? ""} />
-
-          <label className="grid gap-1 text-sm font-medium">
-            Cantidad
-            <input
-              name="cantidad"
-              type="number"
-              min="0.01"
-              step="0.01"
-              className="h-11 rounded-md border border-slate-300 px-3 font-normal outline-none focus:border-slate-900"
-              placeholder="Ej: 12"
-              disabled={!selectedItem}
-              required
-            />
-          </label>
-
-          <label className="grid gap-1 text-sm font-medium">
-            Precio unitario
-            <input
-              name="precioUnitario"
-              type="number"
-              min="0.01"
-              step="0.01"
-              className="h-11 rounded-md border border-slate-300 px-3 font-normal outline-none focus:border-slate-900"
-              placeholder="Ej: 30.00"
-              disabled={!selectedItem}
-              required
-            />
-          </label>
-
-          <button
-            className="mt-6 h-11 rounded-md bg-slate-950 px-4 text-sm font-semibold text-white hover:bg-slate-800 disabled:opacity-50"
-            disabled={!selectedItem}
-          >
-            Guardar ítem
-          </button>
-        </form>
-      </div>
       </section>
     </div>
   );

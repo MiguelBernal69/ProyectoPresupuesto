@@ -6,7 +6,7 @@ const { PrismaClient } = require("@prisma/client");
 
 const prisma = new PrismaClient();
 
-const filePath = path.join(process.cwd(), "data", "Catalogo_Presupuestario_Normalizado.xlsx");
+const filePath = path.join(process.cwd(), "data", "catalogo_items_completo.xlsx");
 
 function normalize(value) {
   return String(value ?? "").trim();

@@ -15,7 +15,7 @@ type ItemConObjeto = {
   };
 };
 
-export async function buscarItemsCatalogo(query: string, limit = 20): Promise<ItemConObjeto[]> {
+export async function buscarItemsCatalogo(query: string): Promise<ItemConObjeto[]> {
   const texto = query.trim();
 
   if (!texto) {
@@ -46,8 +46,7 @@ export async function buscarItemsCatalogo(query: string, limit = 20): Promise<It
         OR unaccent(i.nombre)       ILIKE unaccent(${'%' + texto + '%'})
         OR unaccent(i."objetoCodigo") ILIKE unaccent(${'%' + texto + '%'})
         OR unaccent(o.descripcion)  ILIKE unaccent(${'%' + texto + '%'})
-      ORDER BY i."objetoCodigo" ASC, i.codigo ASC
-      LIMIT ${limit}
+      ORDER BY LENGTH(i.nombre) ASC, i."objetoCodigo" ASC, i.codigo ASC
     `
   );
 
