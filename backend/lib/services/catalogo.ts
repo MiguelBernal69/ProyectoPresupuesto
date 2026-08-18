@@ -22,9 +22,24 @@ export async function buscarItemsCatalogo(query: string): Promise<ItemConObjeto[
     return [];
   }
 
-  // Usamos unaccent() de PostgreSQL para que la búsqueda ignore tildes/acentos
-  // tanto en el texto buscado como en los datos almacenados.
-  // Ejemplo: buscar "comunicacion" encuentra "Comunicación"
+  // Dividir en palabras individuales (ignorar espacios extra)
+  const palabras = texto.split(/\s+/).filter(Boolean);
+
+  // Para cada palabra, construir una condición que busca en los 4 campos
+  // Todas las palabras deben aparecer (AND entre palabras, OR entre campos)
+  const condicionesPorPalabra = palabras.map((p) => {
+    const patron = `%${p}%`;
+    return Prisma.sql`(
+      unaccent(i.codigo)              ILIKE unaccent(${patron})
+      OR unaccent(i.nombre)           ILIKE unaccent(${patron})
+      OR unaccent(i."objetoCodigo")   ILIKE unaccent(${patron})
+      OR unaccent(o.descripcion)      ILIKE unaccent(${patron})
+    )`;
+  });
+
+  // Unir todas las condiciones con AND
+  const whereClause = Prisma.join(condicionesPorPalabra, " AND ");
+
   const resultado = await prisma.$queryRaw<ItemConObjeto[]>(
     Prisma.sql`
       SELECT
@@ -41,11 +56,7 @@ export async function buscarItemsCatalogo(query: string): Promise<ItemConObjeto[
         ) AS objeto
       FROM "Item" i
       JOIN "Objeto" o ON o.codigo = i."objetoCodigo"
-      WHERE
-        unaccent(i.codigo)          ILIKE unaccent(${'%' + texto + '%'})
-        OR unaccent(i.nombre)       ILIKE unaccent(${'%' + texto + '%'})
-        OR unaccent(i."objetoCodigo") ILIKE unaccent(${'%' + texto + '%'})
-        OR unaccent(o.descripcion)  ILIKE unaccent(${'%' + texto + '%'})
+      WHERE ${whereClause}
       ORDER BY LENGTH(i.nombre) ASC, i."objetoCodigo" ASC, i.codigo ASC
     `
   );
