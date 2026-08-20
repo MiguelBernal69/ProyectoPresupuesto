@@ -22,6 +22,13 @@ export async function buscarItemsCatalogo(query: string): Promise<ItemConObjeto[
     return [];
   }
 
+  // Si el query es solo números con menos de 5 dígitos, rellenar con ceros
+  // Ejemplo: "321" → "32100", "39" → "39000"
+  const soloNumeros = /^\d+$/.test(texto);
+  const codigoPadded = soloNumeros && texto.length < 5
+    ? texto.padEnd(5, "0")
+    : null;
+
   // Dividir en palabras individuales (ignorar espacios extra)
   const palabras = texto.split(/\s+/).filter(Boolean);
 
@@ -37,8 +44,15 @@ export async function buscarItemsCatalogo(query: string): Promise<ItemConObjeto[
     )`;
   });
 
-  // Unir todas las condiciones con AND
-  const whereClause = Prisma.join(condicionesPorPalabra, " AND ");
+  // Si hay código completado a 5 dígitos, incluirlo como condición adicional (OR)
+  const whereClause = codigoPadded
+    ? Prisma.sql`(${Prisma.join(condicionesPorPalabra, " AND ")} OR i."objetoCodigo" = ${codigoPadded})`
+    : Prisma.join(condicionesPorPalabra, " AND ");
+
+  // Prioridad: primero los que coincidan exactamente con el código de 5 dígitos
+  const orderPriority = codigoPadded
+    ? Prisma.sql`CASE WHEN i."objetoCodigo" = ${codigoPadded} THEN 0 ELSE 1 END,`
+    : Prisma.sql``;
 
   const resultado = await prisma.$queryRaw<ItemConObjeto[]>(
     Prisma.sql`
@@ -57,7 +71,7 @@ export async function buscarItemsCatalogo(query: string): Promise<ItemConObjeto[
       FROM "Item" i
       JOIN "Objeto" o ON o.codigo = i."objetoCodigo"
       WHERE ${whereClause}
-      ORDER BY LENGTH(i.nombre) ASC, i."objetoCodigo" ASC, i.codigo ASC
+      ORDER BY ${orderPriority} LENGTH(i.nombre) ASC, i."objetoCodigo" ASC, i.codigo ASC
     `
   );
 
