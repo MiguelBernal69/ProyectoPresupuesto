@@ -147,10 +147,12 @@ export default async function AdminPage() {
                           </span>
                         </div>
                         <p className="mt-1 text-sm text-slate-500">
-                          {(unidad.usuarios as {nombreCompleto: string; username: string; activo: boolean}[])[0]?.nombreCompleto ?? "Sin responsable"}
+                          {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                          {(unidad as any).usuarios?.nombreCompleto ?? "Sin responsable"}
                         </p>
                         <p className="mt-1 text-sm text-slate-500">
-                          Usuario: {(unidad.usuarios as {nombreCompleto: string; username: string; activo: boolean}[])[0]?.username ?? "Sin usuario"}
+                          {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                          Usuario: {(unidad as any).usuarios?.username ?? "Sin usuario"}
                         </p>
                       </div>
 
