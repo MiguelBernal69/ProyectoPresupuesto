@@ -132,7 +132,7 @@ export default async function AdminDepartamentosPage({ searchParams }: PageProps
           ) : (
             <div className="grid gap-4">
               {departamentos.map((dept) => {
-                const usuario = dept.usuarios[0];
+                const usuario = (dept as any).usuarios;
                 return (
                   <details
                     key={dept.id}

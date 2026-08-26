@@ -85,7 +85,7 @@ export async function editarDepartamento(input: EditarDepartamentoInput) {
   const existingUser = await prisma.user.findFirst({
     where: {
       username: input.username,
-      id: { not: departamento.usuarios[0]?.id },
+      id: { not: (departamento as any).usuarios?.id },
     },
   });
 
@@ -108,9 +108,9 @@ export async function editarDepartamento(input: EditarDepartamentoInput) {
       userData.passwordHash = await hashPassword(input.password);
     }
 
-    if (departamento.usuarios[0]) {
+    if ((departamento as any).usuarios) {
       await tx.user.update({
-        where: { id: departamento.usuarios[0].id },
+        where: { id: (departamento as any).usuarios.id },
         data: userData,
       });
     } else {

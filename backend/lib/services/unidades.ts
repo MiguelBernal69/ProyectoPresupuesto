@@ -146,11 +146,11 @@ export async function editarUnidadYUsuario(input: EditarUnidadInput) {
     include: { usuarios: true },
   });
 
-  if (!unidad || !unidad.usuarios[0]) {
+  if (!unidad || !(unidad as any).usuarios) {
     throw new Error("No se encontró la unidad o su usuario.");
   }
 
-  const userId = unidad.usuarios[0].id;
+  const userId = (unidad as any).usuarios.id;
   const userUpdateData: any = {
     username,
     nombreCompleto: nombreUsuario,
