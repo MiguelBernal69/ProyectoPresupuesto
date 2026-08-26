@@ -63,7 +63,7 @@ export default async function VerUnidadDepartamentoPage({ params }: PageProps) {
             <p className="text-sm font-medium text-slate-500">{user.nombreCompleto}</p>
             <h1 className="text-xl font-semibold">{unidad.nombre}</h1>
             <p className="text-xs text-slate-400">
-              {unidad.usuarios[0]?.nombreCompleto ?? "Sin responsable"} · @{unidad.usuarios[0]?.username ?? "—"}
+              {(unidad as any).usuarios?.nombreCompleto ?? "Sin responsable"} · @{(unidad as any).usuarios?.username ?? "—"}
             </p>
           </div>
           <div className="flex items-center gap-4">

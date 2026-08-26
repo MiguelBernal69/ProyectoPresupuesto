@@ -98,7 +98,7 @@ export default async function ReporteUnidadesPage() {
               ) : (
                 unidades.map((unidad, index) => {
                   const tope = unidad.topes[0]?.montoTope?.toString() ?? "0";
-                  const usuario = unidad.usuarios[0];
+                  const usuario = (unidad as any).usuarios;
 
                   return (
                     <tr key={unidad.id} className="break-inside-avoid">

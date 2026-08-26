@@ -165,7 +165,7 @@ export default async function DepartamentoUnidadesPage({ searchParams }: PagePro
           ) : (
             <div className="grid gap-4">
               {departamento.unidades.map((unidad) => {
-                const usuario = unidad.usuarios[0];
+                const usuario = (unidad as any).usuarios;
                 const tope = unidad.topes.find((t) => t.gestionId === gestionActiva?.id);
                 const utilizado = unidad.detallesPresupuesto
                   .filter((d) => d.gestionId === gestionActiva?.id)
