@@ -3,16 +3,15 @@ import { Prisma } from "@prisma/client";
 import prisma from "@/lib/db";
 import { requireRole } from "@/lib/auth/session";
 import { logoutAction } from "@/app/login/actions";
+import SelectorGestionWrapper from "@/components/SelectorGestionWrapper";
+import { getGestionContexto } from "@/lib/services/gestion";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminPage() {
   const user = await requireRole("ADMIN");
 
-  const gestionActiva = await prisma.gestion.findFirst({
-    where: { estado: "ABIERTA" },
-    orderBy: { anio: "desc" },
-  });
+  const gestionActiva = await getGestionContexto();
 
   const [gestiones, unidades, usuarios] = await Promise.all([
     prisma.gestion.findMany({
@@ -94,6 +93,12 @@ export default async function AdminPage() {
             </div>
             <div className="flex flex-wrap gap-3">
               <Link
+                className="h-10 rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700"
+                href="/admin/gestiones"
+              >
+                Gestiones
+              </Link>
+              <Link
                 className="h-10 rounded-md bg-slate-950 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800"
                 href="/admin/unidades"
               >
@@ -169,17 +174,20 @@ export default async function AdminPage() {
 
 function Header({ title, name }: { title: string; name: string }) {
   return (
-    <header className="sticky top-0 z-50 border-b border-slate-200 bg-white">
-      <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-4 px-6 py-5">
+    <header className="sticky top-0 z-50 border-b border-slate-200 bg-white shadow-sm">
+      <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-4 px-6 py-4">
         <div>
           <p className="text-sm font-medium text-slate-500">{name}</p>
           <h1 className="text-2xl font-semibold">{title}</h1>
         </div>
-        <form action={logoutAction}>
-          <button className="h-10 rounded-md border border-slate-300 px-4 text-sm font-medium hover:bg-slate-50">
-            Salir
-          </button>
-        </form>
+        <div className="flex gap-4 items-center">
+          <SelectorGestionWrapper />
+          <form action={logoutAction}>
+            <button className="h-10 rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium hover:bg-slate-50 transition-colors">
+              Salir
+            </button>
+          </form>
+        </div>
       </div>
     </header>
   );

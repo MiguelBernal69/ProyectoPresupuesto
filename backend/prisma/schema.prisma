@@ -7,10 +7,169 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model Departamento {
+  id             Int             @id @default(autoincrement())
+  nombre         String          @unique
+  activa         Boolean         @default(true)
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  registrosCarga RegistroCarga[]
+  unidades       Unidad[]
+  usuarios       User[]
+}
+
+model User {
+  id                 Int                 @id @default(autoincrement())
+  username           String              @unique
+  passwordHash       String
+  nombreCompleto     String
+  rol                RolUsuario
+  activo             Boolean             @default(true)
+  unidadId           Int?                @unique
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  departamentoId     Int?
+  registrosCarga     RegistroCarga[]
+  sesionCargaExterna SesionCargaExterna?
+  departamento       Departamento?       @relation(fields: [departamentoId], references: [id])
+  unidad             Unidad?             @relation(fields: [unidadId], references: [id])
+}
+
+model Unidad {
+  id                  Int                  @id @default(autoincrement())
+  nombre              String               @unique
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+  activa              Boolean              @default(true)
+  departamentoId      Int?
+  detallesPresupuesto DetallePresupuesto[]
+  itemsObligatorios   ItemObligatorio[]
+  topes               TopeUnidad[]
+  departamento        Departamento?        @relation(fields: [departamentoId], references: [id])
+  usuarios            User?
+}
+
+model Gestion {
+  id                  Int                  @id @default(autoincrement())
+  anio                Int                  @unique
+  fechaCierre         DateTime?
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+  estado              EstadoGestion        @default(ABIERTA)
+  detallesPresupuesto DetallePresupuesto[]
+  itemsObligatorios   ItemObligatorio[]
+  registrosCarga      RegistroCarga[]
+  topes               TopeUnidad[]
+}
+
+model ItemObligatorio {
+  id         Int      @id @default(autoincrement())
+  gestionId  Int
+  itemCodigo String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  unidadId   Int
+  gestion    Gestion  @relation(fields: [gestionId], references: [id], onDelete: Cascade)
+  item       Item     @relation(fields: [itemCodigo], references: [codigo], onDelete: Cascade)
+  unidad     Unidad   @relation(fields: [unidadId], references: [id], onDelete: Cascade)
+
+  @@unique([gestionId, unidadId, itemCodigo])
+  @@index([gestionId, unidadId])
+}
+
+model TopeUnidad {
+  id        Int      @id @default(autoincrement())
+  unidadId  Int
+  gestionId Int
+  montoTope Decimal  @db.Decimal(12, 2)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  gestion   Gestion  @relation(fields: [gestionId], references: [id], onDelete: Cascade)
+  unidad    Unidad   @relation(fields: [unidadId], references: [id], onDelete: Cascade)
+
+  @@unique([unidadId, gestionId])
+}
+
+model Objeto {
+  codigo      String   @id
+  descripcion String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  items       Item[]
+}
+
+model Item {
+  codigo              String               @id
+  nombre              String
+  objetoCodigo        String
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+  detallesPresupuesto DetallePresupuesto[]
+  objeto              Objeto               @relation(fields: [objetoCodigo], references: [codigo], onDelete: Cascade)
+  itemsObligatorios   ItemObligatorio[]
+
+  @@index([objetoCodigo])
+}
+
+model DetallePresupuesto {
+  id             Int      @id @default(autoincrement())
+  unidadId       Int
+  gestionId      Int
+  itemCodigo     String
+  cantidad       Decimal  @db.Decimal(10, 2)
+  precioUnitario Decimal  @db.Decimal(12, 2)
+  subtotal       Decimal  @db.Decimal(14, 2)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  gestion        Gestion  @relation(fields: [gestionId], references: [id], onDelete: Cascade)
+  item           Item     @relation(fields: [itemCodigo], references: [codigo])
+  unidad         Unidad   @relation(fields: [unidadId], references: [id], onDelete: Cascade)
+
+  @@unique([unidadId, gestionId, itemCodigo])
+  @@index([unidadId, gestionId])
+}
+
+model RegistroCarga {
+  id             Int          @id @default(autoincrement())
+  departamentoId Int
+  gestionId      Int
+  usuarioId      Int
+  itemCodigo     String
+  objetoCodigo   String
+  itemNombre     String
+  objetoNombre   String
+  cantidad       Decimal      @db.Decimal(10, 2)
+  precioUnitario Decimal      @db.Decimal(12, 2)
+  subtotal       Decimal      @db.Decimal(14, 2)
+  estado         EstadoCarga  @default(PENDIENTE)
+  mensajeError   String?
+  idExterno      String?
+  intento        Int          @default(1)
+  fechaCarga     DateTime?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  departamento   Departamento @relation(fields: [departamentoId], references: [id], onDelete: Cascade)
+  gestion        Gestion      @relation(fields: [gestionId], references: [id], onDelete: Cascade)
+  usuario        User         @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@index([departamentoId, gestionId])
+  @@index([estado])
+  @@index([itemCodigo])
+}
+
+model SesionCargaExterna {
+  id              Int      @id @default(autoincrement())
+  usuarioId       Int      @unique
+  cookiescifradas String
+  expiresAt       DateTime
+  createdAt       DateTime @default(now())
+  usuario         User     @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+}
+
 enum RolUsuario {
   ADMIN
-  DEPARTAMENTO
   UNIDAD
+  DEPARTAMENTO
 }
 
 enum EstadoGestion {
@@ -24,202 +183,4 @@ enum EstadoCarga {
   EXITOSO
   ERROR
   OMITIDO
-}
-
-model Departamento {
-  id     Int     @id @default(autoincrement())
-  nombre String  @unique
-  activa Boolean @default(true)
-
-  unidades       Unidad[]
-  usuarios       User[]
-  registrosCarga RegistroCarga[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model User {
-  id             Int        @id @default(autoincrement())
-  username       String     @unique
-  passwordHash   String
-  nombreCompleto String
-  rol            RolUsuario
-  activo         Boolean    @default(true)
-
-  unidadId Int?    @unique
-  unidad   Unidad? @relation(fields: [unidadId], references: [id], onDelete: SetNull)
-
-  departamentoId Int?
-  departamento   Departamento? @relation(fields: [departamentoId], references: [id], onDelete: SetNull)
-
-  registrosCarga     RegistroCarga[]
-  sesionCargaExterna SesionCargaExterna?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model Unidad {
-  id     Int     @id @default(autoincrement())
-  nombre String  @unique
-  activa Boolean @default(true)
-
-  departamentoId Int?
-  departamento   Departamento? @relation(fields: [departamentoId], references: [id], onDelete: SetNull)
-
-  usuarios            User[]
-  topes               TopeUnidad[]
-  detallesPresupuesto DetallePresupuesto[]
-  itemsObligatorios   ItemObligatorio[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model Gestion {
-  id          Int           @id @default(autoincrement())
-  anio        Int           @unique
-  estado      EstadoGestion @default(ABIERTA)
-  fechaCierre DateTime?
-
-  topes               TopeUnidad[]
-  detallesPresupuesto DetallePresupuesto[]
-  itemsObligatorios   ItemObligatorio[]
-  registrosCarga      RegistroCarga[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model ItemObligatorio {
-  id Int @id @default(autoincrement())
-
-  gestionId Int
-  gestion   Gestion @relation(fields: [gestionId], references: [id], onDelete: Cascade)
-
-  unidadId Int
-  unidad   Unidad @relation(fields: [unidadId], references: [id], onDelete: Cascade)
-
-  itemCodigo String
-  item       Item   @relation(fields: [itemCodigo], references: [codigo], onDelete: Cascade)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@unique([gestionId, unidadId, itemCodigo])
-  @@index([gestionId, unidadId])
-}
-
-model TopeUnidad {
-  id Int @id @default(autoincrement())
-
-  unidadId Int
-  unidad   Unidad @relation(fields: [unidadId], references: [id], onDelete: Cascade)
-
-  gestionId Int
-  gestion   Gestion @relation(fields: [gestionId], references: [id], onDelete: Cascade)
-
-  montoTope Decimal @db.Decimal(12, 2)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@unique([unidadId, gestionId])
-}
-
-model Objeto {
-  codigo      String @id
-  descripcion String
-
-  items Item[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model Item {
-  codigo String @id
-  nombre String
-
-  objetoCodigo String
-  objeto       Objeto @relation(fields: [objetoCodigo], references: [codigo], onDelete: Cascade)
-
-  detallesPresupuesto DetallePresupuesto[]
-  itemsObligatorios   ItemObligatorio[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([objetoCodigo])
-}
-
-model DetallePresupuesto {
-  id Int @id @default(autoincrement())
-
-  unidadId Int
-  unidad   Unidad @relation(fields: [unidadId], references: [id], onDelete: Cascade)
-
-  gestionId Int
-  gestion   Gestion @relation(fields: [gestionId], references: [id], onDelete: Cascade)
-
-  itemCodigo String
-  item       Item   @relation(fields: [itemCodigo], references: [codigo], onDelete: Restrict)
-
-  cantidad       Decimal @db.Decimal(10, 2)
-  precioUnitario Decimal @db.Decimal(12, 2)
-  subtotal       Decimal @db.Decimal(14, 2)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@unique([unidadId, gestionId, itemCodigo])
-  @@index([unidadId, gestionId])
-}
-
-// ── Módulo Carga Oficial ───────────────────────────────────────────────────
-
-model RegistroCarga {
-  id Int @id @default(autoincrement())
-
-  departamentoId Int
-  departamento   Departamento @relation(fields: [departamentoId], references: [id], onDelete: Cascade)
-
-  gestionId Int
-  gestion   Gestion @relation(fields: [gestionId], references: [id], onDelete: Cascade)
-
-  usuarioId Int
-  usuario   User @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
-
-  // Datos del ítem (snapshot al momento de la carga)
-  itemCodigo     String
-  objetoCodigo   String
-  itemNombre     String
-  objetoNombre   String
-  cantidad       Decimal @db.Decimal(10, 2)
-  precioUnitario Decimal @db.Decimal(12, 2)
-  subtotal       Decimal @db.Decimal(14, 2)
-
-  // Estado y auditoría
-  estado       EstadoCarga @default(PENDIENTE)
-  mensajeError String?     // Nunca guarda contraseñas
-  idExterno    String?     // ID que asigna el sistema externo
-  intento      Int         @default(1)
-  fechaCarga   DateTime?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([departamentoId, gestionId])
-  @@index([estado])
-  @@index([itemCodigo])
-}
-
-model SesionCargaExterna {
-  id             Int      @id @default(autoincrement())
-  usuarioId      Int      @unique
-  usuario        User     @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
-  cookiescifradas String  // Cookies de sesión PHP cifradas con AES — NO la contraseña
-  expiresAt      DateTime // TTL máximo 2 horas
-  createdAt      DateTime @default(now())
 }

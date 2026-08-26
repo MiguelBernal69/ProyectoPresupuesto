@@ -103,20 +103,7 @@ export async function prepararRegistrosCarga(
     });
 
     if (existente) {
-      // Siempre actualizar los montos con el consolidado actual
-      // (pueden haber cambiado si se agregaron/editaron unidades)
-      const actualizado = await prisma.registroCarga.update({
-        where: { id: existente.id },
-        data: {
-          cantidad: item.cantidadTotal,
-          precioUnitario: item.precioPromedioPonderado,
-          subtotal: item.subtotalTotal,
-          itemNombre: item.itemNombre,
-          objetoCodigo: item.objetoCodigo,
-          objetoNombre: item.objetoNombre,
-        },
-      });
-      registros.push(actualizado as RegistroCargaConEstado);
+      registros.push(existente as RegistroCargaConEstado);
     } else {
       const nuevo = await prisma.registroCarga.create({
         data: {

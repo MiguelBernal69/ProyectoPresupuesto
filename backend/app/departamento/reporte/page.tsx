@@ -3,6 +3,7 @@ import { Prisma } from "@prisma/client";
 import prisma from "@/lib/db";
 import { requireRole } from "@/lib/auth/session";
 import PrintButton from "@/app/unidad/reporte/PrintButton";
+import { getGestionContexto } from "@/lib/services/gestion";
 
 export const dynamic = "force-dynamic";
 
@@ -13,29 +14,30 @@ export default async function ReporteDepartamentoPage() {
     notFound();
   }
 
-  const [departamento, gestionActiva] = await Promise.all([
-    prisma.departamento.findUnique({
-      where: { id: user.departamentoId },
-      include: {
-        unidades: {
-          include: {
-            detallesPresupuesto: {
-              include: {
-                item: { include: { objeto: true } },
-              },
+  const gestionActiva = await getGestionContexto();
+
+  if (!gestionActiva) notFound();
+
+  const departamento = await prisma.departamento.findUnique({
+    where: { id: user.departamentoId },
+    include: {
+      unidades: {
+        include: {
+          detallesPresupuesto: {
+            where: { gestionId: gestionActiva.id },
+            include: {
+              item: { include: { objeto: true } },
             },
-            topes: true,
+          },
+          topes: {
+            where: { gestionId: gestionActiva.id },
           },
         },
       },
-    }),
-    prisma.gestion.findFirst({
-      where: { estado: "ABIERTA" },
-      orderBy: { anio: "desc" },
-    }),
-  ]);
+    },
+  });
 
-  if (!departamento || !gestionActiva) {
+  if (!departamento) {
     notFound();
   }
 

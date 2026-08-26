@@ -7,6 +7,8 @@ import {
   RegistroCargaConEstado,
 } from "@/lib/services/carga-oficial";
 import CargaOficialClient from "./CargaOficialClient";
+import { getGestionContexto } from "@/lib/services/gestion";
+import SelectorGestionWrapper from "@/components/SelectorGestionWrapper";
 
 export const dynamic = "force-dynamic";
 
@@ -19,10 +21,7 @@ export default async function CargaOficialPage() {
 
   const [departamento, gestionActiva] = await Promise.all([
     prisma.departamento.findUnique({ where: { id: user.departamentoId } }),
-    prisma.gestion.findFirst({
-      where: { estado: "ABIERTA" },
-      orderBy: { anio: "desc" },
-    }),
+    getGestionContexto(),
   ]);
 
   if (!departamento || !gestionActiva) {
@@ -69,6 +68,7 @@ export default async function CargaOficialPage() {
             <h1 className="text-xl font-semibold">Carga al Sistema Oficial</h1>
           </div>
           <div className="flex items-center gap-3">
+            <SelectorGestionWrapper />
             <span className="text-sm font-medium text-slate-500">
               Gestión {gestionActiva.anio}
             </span>

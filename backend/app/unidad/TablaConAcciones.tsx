@@ -21,7 +21,7 @@ function formatMoney(valor: string) {
   }).format(Number(valor));
 }
 
-export default function TablaConAcciones({ detalles }: { detalles: DetalleRow[] }) {
+export default function TablaConAcciones({ detalles, soloLectura = false }: { detalles: DetalleRow[]; soloLectura?: boolean }) {
   const [editando, setEditando] = useState<DetalleRow | null>(null);
   const [vista, setVista] = useState<"lista" | "agrupada">("lista");
 
@@ -83,8 +83,8 @@ export default function TablaConAcciones({ detalles }: { detalles: DetalleRow[] 
               <th className="px-3 py-2 font-medium">ÍTEM</th>
               <th className="px-3 py-2 text-right font-medium">CANTIDAD</th>
               <th className="px-3 py-2 text-right font-medium">PRECIO UNIT.</th>
-              <th className="px-3 py-2 text-right font-medium">MONTO</th>
-              <th className="px-3 py-2 text-center font-medium">ACCIONES</th>
+              <th className="px-3 py-2 font-medium">MONTO</th>
+              {!soloLectura && <th className="px-3 py-2 text-center font-medium">ACCIONES</th>}
             </tr>
           </thead>
           <tbody>
@@ -107,38 +107,40 @@ export default function TablaConAcciones({ detalles }: { detalles: DetalleRow[] 
                   <td className="px-3 py-3 text-right">{d.cantidad}</td>
                   <td className="px-3 py-3 text-right">{formatMoney(d.precioUnitario)}</td>
                   <td className="px-3 py-3 text-right font-medium">{formatMoney(d.subtotal)}</td>
-                  <td className="px-3 py-3">
-                    <div className="flex items-center justify-center gap-2">
-                      {/* Editar */}
-                      <button
-                        type="button"
-                        title="Editar ítem"
-                        onClick={() => setEditando(d)}
-                        className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-slate-200 text-sm text-slate-500 transition-colors hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700"
-                      >
-                        ✏️
-                      </button>
-
-                      {/* Eliminar */}
-                      <form
-                        action={eliminarDetalleAction}
-                        onSubmit={(e) => {
-                          if (!confirm("¿Seguro que deseas eliminar este ítem del presupuesto?")) {
-                            e.preventDefault();
-                          }
-                        }}
-                      >
-                        <input type="hidden" name="detalleId" value={d.id} />
+                  {!soloLectura && (
+                    <td className="px-3 py-3">
+                      <div className="flex items-center justify-center gap-2">
+                        {/* Editar */}
                         <button
-                          type="submit"
-                          title="Eliminar ítem"
-                          className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-slate-200 text-sm text-slate-500 transition-colors hover:border-red-300 hover:bg-red-50 hover:text-red-600"
+                          type="button"
+                          title="Editar ítem"
+                          onClick={() => setEditando(d)}
+                          className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-slate-200 text-sm text-slate-500 transition-colors hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700"
                         >
-                          🗑️
+                          ✏️
                         </button>
-                      </form>
-                    </div>
-                  </td>
+
+                        {/* Eliminar */}
+                        <form
+                          action={eliminarDetalleAction}
+                          onSubmit={(e) => {
+                            if (!confirm("¿Seguro que deseas eliminar este ítem del presupuesto?")) {
+                              e.preventDefault();
+                            }
+                          }}
+                        >
+                          <input type="hidden" name="detalleId" value={d.id} />
+                          <button
+                            type="submit"
+                            title="Eliminar ítem"
+                            className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-slate-200 text-sm text-slate-500 transition-colors hover:border-red-300 hover:bg-red-50 hover:text-red-600"
+                          >
+                            🗑️
+                          </button>
+                        </form>
+                      </div>
+                    </td>
+                  )}
                 </tr>
               ))
             )}

@@ -6,6 +6,7 @@ import {
   obtenerResumenUnidad,
 } from "@/lib/services/presupuesto";
 import PrintButton from "./PrintButton";
+import { getGestionContexto } from "@/lib/services/gestion";
 
 export const dynamic = "force-dynamic";
 
@@ -16,13 +17,9 @@ export default async function ReportePresupuestoPage() {
     notFound();
   }
 
-  const [unidad, gestionActiva] = await Promise.all([
-    prisma.unidad.findUnique({ where: { id: user.unidadId } }),
-    prisma.gestion.findFirst({
-      where: { estado: "ABIERTA" },
-      orderBy: { anio: "desc" },
-    }),
-  ]);
+  const gestionActiva = await getGestionContexto();
+
+  const unidad = await prisma.unidad.findUnique({ where: { id: user.unidadId } });
 
   if (!unidad || !gestionActiva) {
     notFound();
@@ -143,17 +140,17 @@ export default async function ReportePresupuestoPage() {
         <header className="mb-6 border-b border-slate-300 pb-4">
           {/* En pantalla */}
           <p className="text-sm font-medium uppercase tracking-wide text-slate-500 print:hidden">
-            PRESUPUESTO 2027
+            PRESUPUESTO {gestionActiva.anio}
           </p>
           {/* Al imprimir: según vista */}
           <p className="print-header-default hidden text-center text-sm font-bold uppercase tracking-widest mb-1">
-            PRESUPUESTO 2027
+            PRESUPUESTO {gestionActiva.anio}
           </p>
           <p className="print-header-detallada hidden text-center text-sm font-bold uppercase tracking-widest mb-1">
-            PRESUPUESTO 2027 — MEMORIA DE CÁLCULO
+            PRESUPUESTO {gestionActiva.anio} — MEMORIA DE CÁLCULO
           </p>
           <p className="print-header-agrupada hidden text-center text-sm font-bold uppercase tracking-widest mb-1">
-            PRESUPUESTO 2027 — MEMORIA DE CÁLCULO / RESUMEN POR OBJETO
+            PRESUPUESTO {gestionActiva.anio} — MEMORIA DE CÁLCULO / RESUMEN POR OBJETO
           </p>
           <h3 className="mt-1 text-sm font-bold">Dirección Administrativa: 8 FACULTAD DE MEDICINA </h3>
           <h3 className="mt-1 text-sm font-semibold">Actividad: {unidad.nombre}</h3>

@@ -4,6 +4,8 @@ import { Prisma } from "@prisma/client";
 import prisma from "@/lib/db";
 import { requireRole } from "@/lib/auth/session";
 import { logoutAction } from "@/app/login/actions";
+import SelectorGestionWrapper from "@/components/SelectorGestionWrapper";
+import { getGestionContexto } from "@/lib/services/gestion";
 
 export const dynamic = "force-dynamic";
 
@@ -14,14 +16,19 @@ export default async function DepartamentoPage() {
     notFound();
   }
 
-  const [departamento, gestionActiva] = await Promise.all([
+  const gestionActiva = await getGestionContexto();
+
+  const [departamento] = await Promise.all([
     prisma.departamento.findUnique({
       where: { id: user.departamentoId },
       include: {
         unidades: {
           include: {
-            topes: true,
+            topes: {
+              where: { gestionId: gestionActiva?.id || 0 },
+            },
             detallesPresupuesto: {
+              where: { gestionId: gestionActiva?.id || 0 },
               include: {
                 item: { include: { objeto: true } },
               },
@@ -29,10 +36,6 @@ export default async function DepartamentoPage() {
           },
         },
       },
-    }),
-    prisma.gestion.findFirst({
-      where: { estado: "ABIERTA" },
-      orderBy: { anio: "desc" },
     }),
   ]);
 
@@ -131,13 +134,14 @@ export default async function DepartamentoPage() {
 
   return (
     <main className="min-h-screen bg-slate-100 text-slate-950">
-      <header className="sticky top-0 z-50 border-b border-slate-200 bg-white">
+      <header className="sticky top-0 z-50 border-b border-slate-200 bg-white shadow-sm">
         <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-4 px-6 py-4">
           <div>
             <p className="text-sm font-medium text-slate-500">{user.nombreCompleto}</p>
             <h1 className="text-xl font-semibold">{departamento.nombre}</h1>
           </div>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2 items-center">
+            <SelectorGestionWrapper />
             <Link
               href="/departamento/unidades"
               className="h-10 rounded-md border border-slate-300 px-4 py-2 text-sm font-medium hover:bg-slate-50"

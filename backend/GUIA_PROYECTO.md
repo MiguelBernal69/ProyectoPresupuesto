@@ -279,3 +279,10 @@ Cuando quieras arreglar algo, sigue este orden:
   ```bash
   npm run import:catalogo
   ```
+
+
+
+
+
+pg_restore -U postgres -d bibliomed_local "C:\Users\TU_USUARIO\Downloads\backup_20260824_125527.backup"
+esto es para poner la copia de la base de datos del servidor 

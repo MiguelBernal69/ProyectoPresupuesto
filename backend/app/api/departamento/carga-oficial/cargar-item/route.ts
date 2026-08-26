@@ -8,6 +8,7 @@ import {
   marcarComoCargando,
   yaFueCargadoExitosamente,
 } from "@/lib/services/carga-oficial";
+import { bankersRound } from "@/lib/utils/math";
 
 export async function POST(req: NextRequest) {
   try {
@@ -82,14 +83,19 @@ export async function POST(req: NextRequest) {
     const intento = registro.intento + 1;
     await marcarComoCargando(registro.id, intento);
 
+    // Aplicar redondeo del banquero (Banker's Rounding) según requerimiento del sistema externo
+    const cantidadRedondeada = bankersRound(registro.cantidad.toNumber());
+    const precioRedondeado = bankersRound(registro.precioUnitario.toNumber());
+    const subtotalCalculado = cantidadRedondeada * precioRedondeado;
+
     // Cargar en sistema externo
     const cookies = descifrarCookies(sesion.cookiescifradas);
     const resultado = await cargarItemAlSistema(cookies, {
       objetoCodigo: registro.objetoCodigo,
       itemCodigo: registro.itemCodigo,
-      cantidad: registro.cantidad.toString(),
-      precioUnitario: registro.precioUnitario.toString(),
-      subtotal: registro.subtotal.toString(),
+      cantidad: cantidadRedondeada.toString(),
+      precioUnitario: precioRedondeado.toString(),
+      subtotal: subtotalCalculado.toString(),
     });
 
     if (resultado.ok) {
